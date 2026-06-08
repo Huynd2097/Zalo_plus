@@ -1,130 +1,36 @@
 ﻿const ALARM_NAME = 'zoom-zalo-schedule';
 
-function sleep(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
+const CONTACT_MAP_STORAGE_KEY = 'zaloContactMap';
+const BATCH_POLL_DELAY_MS = 5000;
+const MAX_REPLIES_PER_ROW = 5;
+const RETRY_SEND_DELAY_MS = 5000;
+const REQUIRED_BATCH_COLUMNS = ['message'];
+const WAIT_REPLY_BATCH_COLUMN = 'wait_reply';
+const INTERMEDIATE_BATCH_COLUMNS = ['display_name', 'tag', 'sys_phone', '_a/c', '_name'];
+const OUTPUT_BATCH_COLUMNS = ['replies', 'error'];
 
-function findFirstTabByUrl(patterns) {
-  return new Promise((resolve) => {
-    chrome.tabs.query({}, (tabs) => {
-      const found = tabs.find((t) => {
-        const url = t.url || '';
-        return patterns.some((p) => p.test(url));
-      });
-      resolve(found || null);
-    });
-  });
-}
+// Maintainer notes:
+// - Do not replace CDP typing/clicking with DOM .value/.click() for message send.
+//   Zalo has repeatedly ignored synthetic input unless it comes through real
+//   browser input events.
+// - Batch send should use the current Zalo tab. Prefer clicking an existing
+//   sidebar item by zid; if it is not rendered, navigate to ?c=zid, then verify
+//   zid/name before sending.
+// - Manual state has only three user states: pending, wait_reply, done. Internal
+//   transitional states are normalized for display and should not leak into UI.
+const debuggerAttachedTabs = new Set();
+const zaloActionLock = { busy: false, queue: [] };
 
-function sendToTab(tabId, message) {
-  return new Promise((resolve) => {
-    chrome.tabs.sendMessage(tabId, message, (resp) => {
-      if (chrome.runtime.lastError) {
-        resolve({ ok: false, error: chrome.runtime.lastError.message });
-        return;
-      }
-      resolve(resp || { ok: false, error: 'No response from content script.' });
-    });
-  });
-}
-
-async function runTask() {
-  const data = await chrome.storage.local.get(['schedule']);
-  const schedule = data.schedule || { isScheduled: false, runAt: 0 };
-  if (!schedule.isScheduled) return;
-
-  const zoomTab = await findFirstTabByUrl([/\.zoom\.us\//i]);
-  if (zoomTab?.id) {
-    await chrome.tabs.update(zoomTab.id, { active: true });
-    await sleep(300);
-    await sendToTab(zoomTab.id, { type: 'ZOOM_END' });
-    await sleep(1800);
-  }
-
-  const zaloTab = await findFirstTabByUrl([/chat\.zalo\.me/i]);
-  if (zaloTab?.id) {
-    await chrome.tabs.update(zaloTab.id, { active: true });
-    await sleep(500);
-    await sendToTab(zaloTab.id, { type: 'ZALO_SEND' });
-  }
-}
-
-function clearSchedule() {
-  chrome.alarms.clear(ALARM_NAME);
-  chrome.storage.local.set({ schedule: { isScheduled: false, runAt: 0 } });
-}
-
-chrome.alarms.onAlarm.addListener(async (alarm) => {
-  if (alarm.name !== ALARM_NAME) return;
-  try {
-    await runTask();
-  } catch (err) {
-    console.error('Run task error', err);
-  } finally {
-    clearSchedule();
-  }
-});
-
-chrome.runtime.onStartup.addListener(async () => {
-  const data = await chrome.storage.local.get(['schedule']);
-  const schedule = data.schedule || { isScheduled: false, runAt: 0 };
-  if (!schedule.isScheduled) return;
-
-  if (schedule.runAt <= Date.now()) {
-    try {
-      await runTask();
-    } finally {
-      clearSchedule();
-    }
-    return;
-  }
-
-  chrome.alarms.create(ALARM_NAME, { when: schedule.runAt });
-});
-
-chrome.runtime.onInstalled.addListener(async () => {
-  const data = await chrome.storage.local.get(['schedule']);
-  const schedule = data.schedule || { isScheduled: false, runAt: 0 };
-  if (schedule.isScheduled && schedule.runAt > Date.now()) {
-    chrome.alarms.create(ALARM_NAME, { when: schedule.runAt });
-  }
-});
-
-chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-  if (message?.type === 'GET_STATUS') {
-    chrome.storage.local.get(['schedule'], (data) => {
-      const schedule = data.schedule || { isScheduled: false, runAt: 0 };
-      sendResponse({ ok: true, schedule });
-    });
-    return true;
-  }
-
-  if (message?.type === 'CANCEL_TASK') {
-    clearSchedule();
-    sendResponse({ ok: true });
-    return;
-  }
-
-  if (message?.type !== 'SCHEDULE_TASK') return;
-
-  const payload = message.payload;
-  if (!payload?.delayMs) {
-    sendResponse({ ok: false, error: 'Payload invalid.' });
-    return;
-  }
-
-  const runAt = Date.now() + payload.delayMs;
-
-  chrome.alarms.clear(ALARM_NAME, () => {
-    chrome.alarms.create(ALARM_NAME, { when: runAt });
-    chrome.storage.local.set({
-      schedule: {
-        isScheduled: true,
-        runAt
-      }
-    });
-    sendResponse({ ok: true, runAt });
-  });
-
-  return true;
-});
+// Import order matters: later modules call helpers registered by earlier files.
+importScripts(
+  'background/utils.js',
+  'background/common.js',
+  'background/queue.js',
+  'background/chrome-helpers.js',
+  'background/webhook.js',
+  'background/zalo-actions.js',
+  'background/schedule.js',
+  'background/contacts.js',
+  'background/worker.js',
+  'background/events.js'
+);

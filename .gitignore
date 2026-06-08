@@ -1,0 +1,35 @@
+# Dependencies
+node_modules/
+
+# Ignore test and archive directories
+test/
+archive/
+
+# Sensitive files and API keys
+.env
+.env.*
+*.key
+*.pem
+*.cert
+*.cert.pem
+*.p12
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS specific
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# IDEs and Editors
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# Agent files and instructions
+.AGENT/

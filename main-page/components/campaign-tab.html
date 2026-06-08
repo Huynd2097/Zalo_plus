@@ -1,0 +1,506 @@
+<!-- Wrapper cho phần trên (Header, Status, Composer) -->
+<div class="max-w-[1536px] mx-auto px-4 sm:px-6 lg:px-8 space-y-4 w-full">
+
+  <div class="app-sticky-panel sticky top-0 z-40 bg-slate-50 pt-1 pb-1 border-b border-slate-200/70 shadow-sm">
+  <!-- SIMPLE HEADER & CONTROLS -->
+  <div
+    class="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white px-3 py-1.5 rounded-lg border border-slate-200/60 shadow-xs gap-2">
+    <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
+      <h2 class="text-sm font-bold text-slate-900">Chiến dịch gửi tin nhắn</h2>
+      <div class="flex items-center gap-1.5 text-xs">
+        <span class="w-2 h-2 rounded-full bg-slate-300" id="statsIndicator"></span>
+        <span class="font-bold text-slate-400 uppercase text-[10px] tracking-wider">Trạng thái:</span>
+        <span id="statsPhase" class="font-bold text-slate-700">Tạm dừng</span>
+      </div>
+    </div>
+    <div class="flex flex-wrap items-center justify-end gap-2 w-full sm:w-auto">
+      <div class="flex items-center gap-2 px-1">
+        <div class="flex items-center gap-1" title="Chờ gửi">
+          <i data-lucide="clock" class="w-5 h-5 text-slate-400"></i>
+          <strong id="statsPending" class="text-sm text-slate-900 font-extrabold leading-none">0</strong>
+        </div>
+        <div class="h-4 w-px bg-slate-200"></div>
+        <div class="flex items-center gap-1" title="Đang theo dõi">
+          <i data-lucide="refresh-cw" class="w-5 h-5 text-cyan-500"></i>
+          <strong id="statsWatching" class="text-sm text-slate-900 font-extrabold leading-none">0</strong>
+        </div>
+        <div class="h-4 w-px bg-slate-200"></div>
+        <div class="flex items-center gap-1" title="Hoàn tất">
+          <i data-lucide="check-circle-2" class="w-5 h-5 text-emerald-500"></i>
+          <strong id="statsDone" class="text-sm text-slate-900 font-extrabold leading-none">0</strong>
+        </div>
+        <div class="h-4 w-px bg-slate-200"></div>
+        <div class="flex items-center gap-1" id="errorBoxBg" title="Lỗi gửi tin">
+          <i data-lucide="alert-circle" class="w-5 h-5 text-rose-500"></i>
+          <strong id="statsErrors" class="text-sm text-slate-900 font-extrabold leading-none">0</strong>
+        </div>
+      </div>
+      <button id="startCampaignBtn"
+        class="flex-1 sm:flex-initial bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-1.5 px-4 rounded-lg text-xs flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-xs">
+        <i data-lucide="play" class="w-3.5 h-3.5"></i>
+        Bắt đầu gửi
+      </button>
+      <button id="pauseCampaignBtn"
+        class="flex-1 sm:flex-initial bg-amber-500 hover:bg-amber-600 text-white font-semibold py-1.5 px-4 rounded-lg text-xs flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-xs hidden">
+        <i data-lucide="pause" class="w-3.5 h-3.5"></i>
+        Tạm dừng
+      </button>
+      <button id="stopCampaignBtn"
+        class="flex-1 sm:flex-initial bg-rose-600 hover:bg-rose-700 text-white font-semibold py-1.5 px-4 rounded-lg text-xs flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-xs hidden">
+        <i data-lucide="square" class="w-3.5 h-3.5"></i>
+        Kết thúc
+      </button>
+    </div>
+  </div>
+  </div>
+
+  <button 
+    type="button" 
+    id="btnToggleCampaignSetup"
+    class="w-full bg-slate-50 hover:bg-slate-100/80 border border-slate-200/80 rounded-xl py-2.5 px-4 flex items-center justify-between text-xs font-bold text-slate-700 shadow-2xs transition-all active:scale-98"
+  >
+    <span class="flex items-center gap-2">
+      <i data-lucide="settings-2" class="text-indigo-600 w-4.5 h-4.5"></i>
+      <span>THIẾT LẬP CHIẾN DỊCH GỬI TIN</span>
+    </span>
+    <div class="flex items-center gap-1.5 bg-indigo-100 text-indigo-700 px-2.5 py-1 rounded-full text-[10px] font-extrabold shadow-3xs">
+      <span id="campaignSetupCollapseStatusText">ĐANG MỞ</span>
+      <i data-lucide="chevron-up" class="w-3.5 h-3.5 transition-transform duration-200" id="campaignSetupCollapseIcon"></i>
+    </div>
+  </button>
+
+  <!-- GRID CHỌN & SOẠN THẢO -->
+  <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.6fr)_minmax(0,1.5fr)] gap-5 items-start transition-all duration-200 animate-fade-in" id="campaignSetupGrid">
+
+    <!-- Cột 1: Bộ chọn danh bạ đơn giản -->
+    <div class="bg-white rounded-xl border border-slate-200/60 shadow-xs p-4 flex flex-col h-[520px]">
+      <div class="flex items-center justify-between mb-2">
+        <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+          <i data-lucide="user-check" class="text-indigo-600 w-4 h-4"></i>
+          Danh sách nhận tin
+        </h3>
+        <span id="directoryCountLabel"
+          class="text-[10px] text-indigo-600 font-extrabold bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-full">0/0</span>
+      </div>
+
+      <!-- Tìm kiếm nhanh -->
+      <div class="relative mb-2">
+        <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400">
+          <i data-lucide="search" class="w-3.5 h-3.5"></i>
+        </span>
+        <input type="text" id="directorySearchInput" placeholder="Tìm tên hoặc số điện thoại..."
+          class="w-full pl-8 pr-3 py-1 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500 text-xs transition-all placeholder-slate-400">
+      </div>
+
+      <!-- Tag filter horizontal scroll bar -->
+      <div class="relative flex items-center mb-2">
+        <div id="tagFilterContainer"
+          class="flex items-center gap-1 overflow-x-auto no-scrollbar pb-1 w-full select-none">
+          <!-- Render tag -->
+        </div>
+      </div>
+
+      <!-- Chọn tất cả -->
+      <div class="flex items-center justify-between pb-2 mb-2 border-b border-slate-100">
+        <label class="inline-flex items-center cursor-pointer group">
+          <input type="checkbox" id="selectAllDirectoryCheckbox" class="sr-only peer">
+          <div
+            class="w-3.5 h-3.5 bg-white border border-slate-300 rounded flex items-center justify-center peer-checked:bg-emerald-600 peer-checked:border-emerald-600 transition-all mr-2">
+            <i data-lucide="check" class="text-white w-2.5 h-2.5 stroke-[4] hidden peer-checked:block"></i>
+          </div>
+          <span class="text-[11px] font-bold text-slate-400 group-hover:text-slate-600 transition-colors">Chọn tất cả danh bạ đang lọc</span>
+        </label>
+      </div>
+
+      <!-- Danh sách liên hệ -->
+      <div class="flex-1 overflow-y-auto space-y-1.5 pr-1" id="contactsListContainer">
+        <!-- Render danh bạ -->
+      </div>
+    </div>
+
+    <!-- Cột 2: Danh bạ đã chọn -->
+    <div class="bg-white rounded-xl border border-slate-200/60 shadow-xs p-3 flex flex-col h-[520px]">
+      <div class="flex items-center justify-between mb-2">
+        <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+          <i data-lucide="users" class="text-indigo-600 w-4 h-4"></i>
+          Danh bạ đã chọn
+        </h3>
+        <span id="selectedContactsCount" class="text-[10px] text-emerald-600 font-extrabold bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-full">0</span>
+      </div>
+
+      <!-- Dải thao tác nhanh (Bỏ chọn tất cả) -->
+      <div class="flex items-center justify-end pb-2 mb-2 border-b border-slate-100">
+        <button 
+          id="clearSelectedContactsBtn"
+          class="text-[10px] font-bold text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100/75 px-2 py-0.5 rounded transition-all flex items-center gap-1"
+        >
+          <i data-lucide="trash" class="w-3 h-3"></i>
+          Bỏ chọn tất cả
+        </button>
+      </div>
+
+      <!-- Danh sách liên hệ đã chọn -->
+      <div class="flex-1 overflow-y-auto space-y-1.5 pr-1" id="selectedContactsContainer">
+        <!-- Sẽ render động qua renderSelectedContactsList() -->
+      </div>
+    </div>
+
+    <!-- Cột 3: Soạn thảo nâng cao cực kỳ tối giản -->
+    <div class="bg-white rounded-xl border border-slate-200/60 shadow-xs overflow-hidden flex flex-col h-[520px]" id="composerCard">
+      <!-- Header của khối Soạn thảo (Thu nhỏ padding, giữ size chữ & nút trợ lý mặc định) -->
+      <div class="py-1.5 px-3 bg-slate-50 border-b border-slate-200/60 flex justify-between items-center select-none">
+        <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+          <i data-lucide="edit-3" class="text-indigo-600 w-4 h-4"></i>
+          Nội dung gửi
+        </h3>
+      </div>
+
+      <!-- Nội dung của Composer (Ghim không cho cuộn, dính sát nội dung phía dưới) -->
+      <div class="p-3 flex-1 flex flex-col justify-start overflow-hidden space-y-2 transition-all duration-200" id="composerContent">
+        <div class="space-y-2 flex-1 flex flex-col">
+          <!-- Hẹn giờ & Chờ phản hồi (Dàn hàng ngang tối giản, giảm chiều cao để nhường không gian cho tin nhắn) -->
+          <div class="bg-slate-50/50 p-1.5 rounded-lg border border-slate-200/60 grid grid-cols-[1.2fr_1fr] gap-2">
+            <!-- Cột trái: Hẹn giờ -->
+            <div class="space-y-1 border-r border-slate-200/80 pr-2">
+              <label class="text-[10px] font-bold text-amber-500 uppercase tracking-wider flex items-center gap-1">
+                <i data-lucide="calendar" class="w-3.5 h-3.5 text-amber-500"></i> HẸN GIỜ
+              </label>
+              <input type="datetime-local" id="composerScheduleTime"
+                class="w-full p-0.5 bg-white border border-slate-200 rounded text-[10px] focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-all font-semibold text-slate-600">
+              <!-- Phím tắt giờ nhanh (Mạng lưới 2x2 gọn gàng) -->
+              <div class="grid grid-cols-2 gap-0.5">
+                <button id="btnTimeNow"
+                  class="text-[9px] py-0.5 bg-white hover:bg-slate-100 rounded border border-slate-200 text-slate-500 font-bold transition-colors">Ngay</button>
+                <button id="btnTime15m"
+                  class="text-[9px] py-0.5 bg-white hover:bg-slate-100 rounded border border-slate-200 text-slate-500 font-bold transition-colors">+15p</button>
+                <button id="btnTime1h"
+                  class="text-[9px] py-0.5 bg-white hover:bg-slate-100 rounded border border-slate-200 text-slate-500 font-bold transition-colors">+1h</button>
+                <button id="btnTimeTomorrow"
+                  class="text-[9px] py-0.5 bg-white hover:bg-slate-100 rounded border border-slate-200 text-slate-500 font-bold transition-colors">8h Mai</button>
+              </div>
+            </div>
+
+            <!-- Cột phải: Chờ phản hồi -->
+            <div class="flex flex-col justify-between pl-1">
+              <div class="flex items-center justify-between gap-1">
+                <span class="text-xs font-bold text-slate-700 whitespace-nowrap">Chờ phản hồi</span>
+                <label class="inline-flex items-center cursor-pointer relative">
+                  <input type="checkbox" id="composerWaitReply" class="sr-only peer" checked>
+                  <div class="w-7 h-4 bg-slate-200 rounded-full peer peer-checked:bg-emerald-600 transition-colors after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-slate-350 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:after:translate-x-3"></div>
+                </label>
+              </div>
+              <p class="text-[9px] text-slate-400 leading-tight">Đại diện lấy phản hồi tự động nếu khách có nhắn lại.</p>
+            </div>
+          </div>
+
+          <!-- Ô nhập tin nhắn thiết kế kiểu Smart Chatbox (Thu nhỏ chiều cao để không tràn, tự động co giãn) -->
+          <div class="border border-slate-200 rounded-xl bg-slate-50 focus-within:ring-1 focus-within:ring-indigo-500 focus-within:border-indigo-500 transition-all overflow-hidden relative flex flex-col flex-1">
+            <textarea id="composerMessage" rows="5"
+              placeholder="Nhập tin nhắn thô... Dùng {n} để chèn Tên khách, {a} hoặc {A} để tự động chèn xưng hô dựa theo danh bạ."
+              class="w-full p-2 bg-transparent text-xs border-none outline-none focus:ring-0 resize-none flex-1 placeholder-slate-400 min-h-[140px]"></textarea>
+
+            <!-- AI Loader Overlay -->
+            <div id="aiImproverLoader"
+              class="absolute inset-0 bg-white/90 backdrop-blur-[1px] flex flex-col items-center justify-center rounded-xl hidden animate-fade-in">
+              <div class="flex space-x-1.5 mb-2">
+                <div class="w-2 h-2 bg-indigo-600 rounded-full animate-bounce"></div>
+                <div class="w-2 h-2 bg-violet-600 rounded-full animate-bounce [animation-delay:0.2s]"></div>
+                <div class="w-2 h-2 bg-fuchsia-600 rounded-full animate-bounce [animation-delay:0.4s]"></div>
+              </div>
+              <p class="text-[11px] font-bold text-indigo-700">Gemini đang tối ưu hóa tin nhắn...</p>
+            </div>
+
+            <!-- Chân thanh soạn thảo (Giữ size chữ mặc định) -->
+            <div class="bg-slate-100/80 px-2 py-1 border-t border-slate-200/60 flex flex-wrap items-center justify-between gap-1">
+              <div class="flex flex-wrap items-center gap-1">
+                <button id="btnInsertAcUpper"
+                  class="text-[9px] px-1.5 py-0.5 bg-white text-slate-600 border border-slate-200 rounded hover:bg-slate-50 transition-all font-bold">Xưng hô {A}</button>
+                <button id="btnInsertAc"
+                  class="text-[9px] px-1.5 py-0.5 bg-white text-slate-600 border border-slate-200 rounded hover:bg-slate-50 transition-all font-bold">xưng hô {a}</button>
+                <button id="btnInsertName"
+                  class="text-[9px] px-1.5 py-0.5 bg-white text-slate-600 border border-slate-200 rounded hover:bg-slate-50 transition-all font-bold">Tên {n}</button>
+                <!-- ✨ Nút AI viết tiếp tin nhắn (Mặc định) -->
+                <button id="btnAiAutocomplete"
+                  class="text-[9px] px-1.5 py-0.5 bg-gradient-to-r from-violet-500 to-indigo-500 text-white rounded hover:opacity-95 font-bold transition-all flex items-center gap-0.5">
+                  ✨ Viết tiếp
+                </button>
+                <!-- Menu viết lại nhanh bằng AI dạng Dropdown (Mặc định) -->
+                <select id="aiToneSelect"
+                  class="text-[9px] bg-indigo-50 border border-indigo-100 text-indigo-700 font-bold px-1 py-0.5 rounded outline-none cursor-pointer font-sans">
+                  <option value="" disabled selected>✨ Tone...</option>
+                  <option value="formal">✨ Trang trọng</option>
+                  <option value="friendly">✨ Thân thiện</option>
+                  <option value="sales">✨ Bán hàng</option>
+                  <option value="short">✨ Rút gọn</option>
+                </select>
+              </div>
+              <span id="composerCharCount" class="text-[9px] text-slate-400 font-medium">0 ký tự</span>
+            </div>
+          </div>
+
+          <!-- Khu vực Đính kèm hình ảnh (Tăng kích thước block ảnh gấp 2 lần) -->
+          <div class="flex items-center select-none py-1" id="composerAttachmentSection">
+            <!-- Nút Thêm ảnh (Trạng thái chưa chọn, tăng kích thước gấp 2 lần) -->
+            <div id="imageUploadWrapper" class="block">
+              <label for="composerImageInput" class="w-24 h-24 border border-slate-200 rounded-xl flex flex-col items-center justify-center gap-1.5 cursor-pointer bg-white hover:bg-slate-50 hover:border-slate-350 transition-all text-slate-450 hover:text-slate-600 shadow-2xs">
+                <i data-lucide="image" class="w-7 h-7 text-slate-450"></i>
+                <span class="text-[11px] font-bold text-slate-500">Ảnh</span>
+              </label>
+              <input type="file" id="composerImageInput" accept="image/*" class="hidden">
+            </div>
+
+            <!-- Ảnh Preview (Trạng thái đã chọn, tăng kích thước gấp 2 lần) -->
+            <div id="imagePreviewWrapper" class="flex items-center gap-3 hidden">
+              <div class="relative w-24 h-24 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-center flex-shrink-0">
+                <img id="composerImagePreview" src="" class="w-full h-full object-cover rounded-xl">
+                <!-- Nút Xóa ảnh -->
+                <button type="button" id="btnRemoveComposerImage" class="absolute -top-2 -right-2 bg-rose-500 hover:bg-rose-600 text-white rounded-full flex items-center justify-center w-5 h-5 shadow-sm transition-all focus:outline-none">
+                  <i data-lucide="x" class="w-3 h-3 stroke-[3]"></i>
+                </button>
+              </div>
+              <span id="composerImageName" class="text-xs font-semibold text-rose-600 truncate max-w-[180px]"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Nút gửi liền ngay dưới (Giữ size nút mặc định) -->
+        <div class="pt-1 flex justify-end flex-shrink-0">
+          <button id="btnAddToQueue"
+            class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-1.5 px-3 rounded-lg text-xs flex items-center justify-center gap-1 transition-all active:scale-95 shadow-xs">
+            <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i>
+            Đẩy vào Hàng Chờ gửi
+          </button>
+        </div>
+      </div>
+    </div>
+
+      <!-- SLIDE OUT DRAWER: TRỢ LÝ KỊCH BẢN AI -->
+      <div id="aiDrawer"
+        class="absolute inset-y-0 right-0 w-full md:w-[320px] bg-slate-900 text-slate-100 rounded-xl shadow-2xl border-l border-slate-800 p-4 flex flex-col justify-between transform translate-x-full transition-transform duration-200 z-20 hidden">
+        <div class="flex flex-col h-full justify-between">
+          <!-- Drawer Header -->
+          <div class="flex items-center justify-between border-b border-slate-800 pb-2 mb-2">
+            <div class="flex items-center gap-1.5">
+              <span class="text-base">✨</span>
+              <div>
+                <h4 class="font-bold text-xs text-white uppercase tracking-wider">Kịch bản AI</h4>
+                <p class="text-[9px] text-slate-400">Tạo tin nhắn bằng Gemini LLM</p>
+              </div>
+            </div>
+            <button id="btnCloseAiDrawer" class="text-slate-400 hover:text-white transition-colors">
+              <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+          </div>
+
+          <!-- Drawer Scrollable Area -->
+          <div class="flex-1 overflow-y-auto space-y-3 pr-1 no-scrollbar text-xs">
+            <div class="space-y-1">
+              <label class="block text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Mục tiêu chiến
+                dịch:</label>
+              <textarea id="aiPromptInput" rows="4"
+                placeholder="Ví dụ: Chúc mừng sinh nhật tặng kèm mã quà tặng giảm 10%..."
+                class="w-full p-2 bg-slate-800 border border-slate-700 rounded text-xs text-white focus:outline-none focus:ring-1 focus:ring-indigo-500 placeholder-slate-500 resize-none"></textarea>
+            </div>
+
+            <button id="btnGenerateAiIdeas"
+              class="w-full bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold py-1.5 px-3 rounded text-xs flex items-center justify-center gap-1.5 transition-all active:scale-95">
+              Phác thảo kịch bản
+            </button>
+
+            <!-- Loading skeleton -->
+            <div id="aiIdeasLoading" class="space-y-2 hidden">
+              <div class="p-2.5 bg-slate-800 rounded space-y-1.5 animate-pulse">
+                <div class="h-3 bg-slate-700 rounded w-1/3"></div>
+                <div class="h-2 bg-slate-700 rounded w-full"></div>
+                <div class="h-2 bg-slate-700 rounded w-4/5"></div>
+              </div>
+            </div>
+
+            <!-- Ideas Output Area -->
+            <div id="aiIdeasContainer" class="space-y-2">
+              <!-- Render AI Ideas -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+  </div>
+
+<!-- Wrapper cho bảng hàng chờ -->
+<div class="w-full">
+
+  <!-- BẢNG HÀNG CHỜ GỬI -->
+  <div class="bg-white rounded-xl shadow-xs border border-slate-200/60 overflow-hidden">
+    <div
+      class="p-3 bg-slate-50 border-b border-slate-200/60 flex flex-col xl:flex-row xl:items-center justify-between gap-3">
+      <div class="flex flex-wrap items-center gap-1.5">
+        <div class="relative">
+          <span class="absolute inset-y-0 left-0 flex items-center pl-2.5 pointer-events-none text-slate-400">
+            <i data-lucide="search" class="w-3 h-3"></i>
+          </span>
+          <input type="text" id="queueSearchInput" placeholder="Tìm hàng chờ..."
+            class="pl-7 pr-2 py-1 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500 text-xs w-[140px] transition-all">
+        </div>
+
+        <div class="relative">
+          <button id="queueStatusFilterBtn"
+            class="bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-bold py-1 px-2.5 rounded-lg text-xs flex items-center gap-1 transition-all">
+            <span id="queueStatusFilterLabel">Tất cả trạng thái</span>
+            <i data-lucide="chevron-down" class="w-3 h-3"></i>
+          </button>
+          <div id="queueStatusFilterDropdown"
+            class="origin-top-left absolute left-0 mt-1 w-36 rounded-lg shadow-md bg-white ring-1 ring-black ring-opacity-5 z-20 hidden">
+            <div class="py-1">
+              <button data-status-filter=""
+                class="w-full text-left px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50 flex items-center gap-1.5">
+                <span class="w-1.5 h-1.5 rounded-full bg-slate-300"></span> Tất cả trạng thái
+              </button>
+              <button data-status-filter="pending"
+                class="w-full text-left px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50 flex items-center gap-1.5">
+                <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span> Chờ gửi
+              </button>
+              <button data-status-filter="wait_reply"
+                class="w-full text-left px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50 flex items-center gap-1.5">
+                <span class="w-1.5 h-1.5 rounded-full bg-cyan-400"></span> Đang theo dõi
+              </button>
+              <button data-status-filter="done"
+                class="w-full text-left px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50 flex items-center gap-1.5">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Hoàn tất
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="relative">
+          <button id="queueTagFilterBtn"
+            class="bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-bold py-1 px-2.5 rounded-lg text-xs flex items-center gap-1 transition-all">
+            <span id="queueTagFilterLabel">Tất cả tag</span>
+            <i data-lucide="chevron-down" class="w-3 h-3"></i>
+          </button>
+          <div id="queueTagFilterDropdown"
+            class="origin-top-left absolute left-0 mt-1 w-36 rounded-lg shadow-md bg-white ring-1 ring-black ring-opacity-5 z-20 hidden">
+            <div class="py-1" id="queueTagFilterOptions">
+              <button data-queue-tag-filter=""
+                class="w-full text-left px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50">
+                Tất cả tag
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Menu Trạng thái hàng loạt -->
+        <div class="relative">
+          <button id="bulkStatusBtn"
+            class="bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-bold py-1 px-2.5 rounded-lg text-xs flex items-center gap-1 transition-all"
+            disabled>
+            <i data-lucide="refresh-cw" class="w-3 h-3 text-slate-400"></i>
+            Đổi trạng thái
+            <i data-lucide="chevron-down" class="w-3 h-3"></i>
+          </button>
+          <div id="bulkStatusDropdown"
+            class="origin-top-left absolute left-0 mt-1 w-36 rounded-lg shadow-md bg-white ring-1 ring-black ring-opacity-5 z-20 hidden">
+            <div class="py-1">
+              <button id="btnBulkStatePending"
+                class="w-full text-left px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50 flex items-center gap-1.5">
+                <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span> Chờ gửi
+              </button>
+              <button id="btnBulkStateWait"
+                class="w-full text-left px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50 flex items-center gap-1.5">
+                <span class="w-1.5 h-1.5 rounded-full bg-cyan-400"></span> Đang theo dõi
+              </button>
+              <button id="btnBulkStateDone"
+                class="w-full text-left px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50 flex items-center gap-1.5">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Hoàn tất
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <span id="selectedQueueCount" class="text-[10px] font-bold text-slate-500 bg-white border border-slate-200 rounded-lg px-2 py-1 hidden">Đã chọn: 0</span>
+      </div>
+
+      <!-- Tác vụ hàng loạt (Bulk Actions) & CSV options -->
+      <div class="flex flex-wrap items-center gap-1.5">
+        <button id="bulkResetBtn"
+          class="bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-bold py-1 px-2.5 rounded-lg text-xs flex items-center gap-1 transition-all hidden"
+          disabled>
+          <i data-lucide="rotate-ccw" class="w-3 h-3 text-slate-400"></i>
+          Reset
+        </button>
+
+        <button id="bulkDeleteBtn"
+          class="bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-100 font-bold py-1 px-2.5 rounded-lg text-xs flex items-center gap-1 transition-all"
+          disabled>
+          <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+          Xóa
+        </button>
+
+        <div class="h-4 w-px bg-slate-200 mx-0.5"></div>
+
+        <!-- Import CSV option -->
+        <input id="csvFile" type="file"
+          accept=".csv,text/csv,.xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+          class="hidden" />
+        <button id="templateBtn"
+          class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-1 px-3 rounded-lg text-xs flex items-center gap-1 transition-all hidden">
+          Tải template
+        </button>
+        <button id="importBtn"
+          class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-100 font-bold py-1 px-3 rounded-lg text-xs flex items-center gap-1 transition-all hidden">
+          Import CSV/XLSX
+        </button>
+
+        <!-- Tổng hợp phản hồi -->
+        <button id="btnSummarizeReplies"
+          class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 font-bold py-1 px-3 rounded-lg text-xs flex items-center gap-1 shadow-sm transition-all">
+          <i data-lucide="clipboard-list" class="w-3.5 h-3.5"></i>
+          Tổng hợp Phản hồi
+        </button>
+
+        <button id="exportQueueBtn"
+          class="bg-slate-800 hover:bg-slate-700 text-white font-semibold py-1 px-3 rounded-lg text-xs flex items-center gap-1 transition-all">
+          <i data-lucide="download" class="w-3.5 h-3.5"></i>
+          Xuất Excel
+        </button>
+        <button id="clearQueueBtn"
+          class="bg-white hover:bg-rose-50 border border-slate-200 text-rose-600 font-semibold py-1 px-2.5 rounded-lg text-xs flex items-center gap-1 transition-all hidden">
+          Làm trống
+        </button>
+      </div>
+    </div>
+
+    <!-- Trạng thái trống -->
+    <div id="emptyTableState" class="p-8 text-center text-slate-400">
+      <p class="text-xs font-semibold">Chưa có dữ liệu hàng chờ gửi</p>
+      <p class="text-[11px] text-slate-400 mt-0.5">Vui lòng chọn liên hệ trong danh bạ và đẩy xuống hàng chờ để bắt
+        đầu chiến dịch.</p>
+    </div>
+
+    <!-- Khung hiển thị bảng cuộn -->
+    <div class="overflow-x-auto w-full border-t border-slate-100 hidden" id="tableContainer">
+      <table class="w-full text-left border-collapse min-w-[1100px]">
+        <thead>
+          <tr
+            class="bg-slate-50 border-b border-slate-200 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+            <th class="w-10 px-3 py-2.5 select-none">
+              <input type="checkbox" id="masterQueueCheckbox" class="w-3.5 h-3.5 rounded border-slate-300 accent-emerald-600 cursor-pointer">
+            </th>
+            <th class="px-2 py-2.5 w-[90px] whitespace-nowrap">Trạng thái</th>
+            <th class="px-3 py-2.5 w-[320px]">Người nhận</th>
+            <th class="px-3 py-2.5 w-[80px] text-center">Ảnh</th>
+            <th class="px-3 py-2.5 min-w-[300px]">Nội dung tin nhắn</th>
+            <th class="px-3 py-2.5 min-w-[300px]">Khách phản hồi</th>
+            <th class="px-3 py-2.5 w-[120px]">Thời gian gửi</th>
+            <th class="px-3 py-2.5 w-[60px] text-center">Chờ</th>
+            <th class="px-3 py-2.5 w-[150px]">Lỗi hệ thống</th>
+            <th class="px-3 py-2.5 w-[160px]">Zalo ID (zid)</th>
+          </tr>
+        </thead>
+        <tbody id="queueTableBody" class="divide-y divide-slate-100 text-xs text-slate-600">
+          <!-- Render dòng hàng chờ động -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+</div>

@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Z-Campaigner AI</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+    
+    :root {
+      --primary: #4f46e5;
+      --primary-hover: #4338ca;
+      --primary-light: #e0e7ff;
+      --slate-50: #f8fafc;
+      --slate-100: #f1f5f9;
+      --slate-200: #e2e8f0;
+      --slate-500: #64748b;
+      --slate-700: #334155;
+      --slate-800: #1e293b;
+      --slate-950: #0f172a;
+      --emerald-500: #10b981;
+      --emerald-600: #059669;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      width: 320px;
+      font-family: 'Inter', sans-serif;
+      background-color: var(--slate-950);
+      color: #ffffff;
+      padding: 16px;
+      overflow: hidden;
+    }
+
+    /* Outer Container */
+    .popup-container {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* Header */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 12px;
+      border-b: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .logo-icon {
+      background: linear-gradient(135deg, var(--primary), #818cf8);
+      color: white;
+      padding: 6px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+    }
+
+    .logo-text {
+      font-size: 14px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: #ffffff;
+    }
+
+    .ai-badge {
+      font-size: 8px;
+      background: rgba(99, 102, 241, 0.15);
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      color: #a5b4fc;
+      padding: 1px 4px;
+      border-radius: 99px;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+    }
+
+    /* Live Worker Status Card */
+    .status-card {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 12px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .status-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .status-label {
+      font-size: 11px;
+      color: var(--slate-500);
+      font-weight: 500;
+    }
+
+    .status-value {
+      font-size: 12px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 99px;
+      background-color: var(--slate-500);
+    }
+
+    .dot.active {
+      background-color: var(--emerald-500);
+      box-shadow: 0 0 8px var(--emerald-500);
+    }
+
+    /* Stats Grid */
+    .stats-grid {
+      display: grid;
+      grid-template-cols: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .stat-box {
+      background: rgba(255, 255, 255, 0.01);
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      padding: 8px 12px;
+      border-radius: 8px;
+    }
+
+    .stat-num {
+      font-size: 16px;
+      font-weight: 800;
+      color: #ffffff;
+      margin-bottom: 2px;
+    }
+
+    .stat-desc {
+      font-size: 10px;
+      color: var(--slate-500);
+      font-weight: 500;
+    }
+
+    /* Main Button */
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+      color: #ffffff;
+      border: none;
+      padding: 11px;
+      font-size: 12px;
+      font-weight: 700;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 14px rgba(79, 70, 229, 0.2);
+      width: 100%;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(79, 70, 229, 0.35);
+    }
+
+    .btn-primary:active {
+      transform: translateY(0);
+    }
+
+    /* Action bar */
+    .actions-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 10px;
+      color: var(--slate-500);
+      padding-top: 4px;
+    }
+
+    .sync-link {
+      color: #818cf8;
+      text-decoration: none;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 3px;
+    }
+
+    .sync-link:hover {
+      color: #a5b4fc;
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="popup-container">
+    <!-- Header -->
+    <div class="header">
+      <div class="brand">
+        <div class="logo-icon">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+          </svg>
+        </div>
+        <span class="logo-text">Z-Campaigner <span class="ai-badge">✨ AI</span></span>
+      </div>
+    </div>
+
+    <!-- Status panel -->
+    <div class="status-card">
+      <div class="status-row">
+        <span class="status-label">TIẾN TRÌNH CHIẾN DỊCH</span>
+        <span class="status-value" id="workerStatus">
+          <span class="dot" id="statusDot"></span>
+          <span id="statusText">Tải...</span>
+        </span>
+      </div>
+      
+      <div class="stats-grid">
+        <div class="stat-box">
+          <div class="stat-num" id="pendingCount">0</div>
+          <div class="stat-desc">Chờ gửi tin</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-num" id="contactsCount">0</div>
+          <div class="stat-desc">Liên hệ đã lưu</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main call to action -->
+    <button class="btn-primary" id="openDashboardBtn">
+      <span>Mở trang điều khiển</span>
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="5" y1="12" x2="19" y2="12"></line>
+        <polyline points="12 5 19 12 12 19"></polyline>
+      </svg>
+    </button>
+
+    <!-- Footer bar -->
+    <div class="actions-footer">
+      <span>Phiên bản 1.0.0</span>
+      <span class="sync-link" id="syncNowLink">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path>
+        </svg>
+        Đồng bộ Zalo
+      </span>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

@@ -1,0 +1,55 @@
+<!-- MODAL: TỔNG HỢP DỮ LIỆU PHẢN HỒI -->
+<div id="aiSummaryModal"
+  class="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center z-50 hidden transition-all duration-300">
+  <div
+    class="bg-white rounded-xl border border-slate-200 shadow-2xl w-full max-w-3xl mx-4 overflow-hidden transform scale-95 transition-transform duration-250 flex flex-col max-h-[85vh]"
+    id="aiSummaryCard">
+    <!-- Header -->
+    <div class="p-4 bg-slate-900 text-white flex justify-between items-center flex-shrink-0">
+      <div class="flex items-center gap-2">
+        <div class="p-1 bg-indigo-600 rounded">
+          <i data-lucide="clipboard-list" class="w-4 h-4"></i>
+        </div>
+        <div>
+          <h3 class="font-bold text-xs text-white">Tổng hợp dữ liệu phản hồi của Khách</h3>
+          <p class="text-[10px] text-slate-400">Thống kê nhanh toàn bộ phản hồi hiện tại trong danh sách gửi tin</p>
+        </div>
+      </div>
+      <button id="btnCloseAiSummaryModal" class="text-slate-400 hover:text-white transition-colors">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+    </div>
+
+    <!-- Content -->
+    <div class="p-4 space-y-3 overflow-y-auto flex-1 text-slate-700 text-xs">
+      <div class="border border-slate-200 rounded-lg overflow-hidden bg-slate-50">
+        <table class="w-full text-left border-collapse">
+          <thead
+            class="bg-slate-100 border-b border-slate-200 font-bold text-slate-500 uppercase text-[9px] tracking-wider">
+            <tr>
+              <th class="px-3 py-2 w-[180px]">Khách hàng</th>
+              <th class="px-3 py-2 w-[120px]">Số điện thoại</th>
+              <th class="px-3 py-2">Nội dung đã gửi</th>
+              <th class="px-3 py-2 w-[250px] text-indigo-700 font-extrabold bg-indigo-50/50">Phản hồi của khách</th>
+            </tr>
+          </thead>
+          <tbody id="localSummaryTableBody" class="divide-y divide-slate-200 bg-white">
+            <!-- Render tự động phản hồi -->
+          </tbody>
+        </table>
+      </div>
+
+      <div id="localSummaryEmptyState" class="text-center py-10 text-slate-400 hidden">
+        <p class="font-semibold">Chưa nhận được phản hồi nào từ khách hàng trong đợt gửi tin này.</p>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="p-3 bg-slate-50 border-t border-slate-200 flex justify-end flex-shrink-0">
+      <button id="btnConfirmCloseSummary"
+        class="px-4 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs shadow-xs transition-all active:scale-95">
+        Đóng báo cáo
+      </button>
+    </div>
+  </div>
+</div>

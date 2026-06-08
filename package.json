@@ -1,0 +1,13 @@
+{
+  "name": "zoom-zalo-campaigner",
+  "version": "1.0.0",
+  "description": "Chrome Extension Zalo Campaigner",
+  "main": "background.js",
+  "scripts": {
+    "build:css": "tailwindcss -i ./shared/tailwind-input.css -o ./vendor/tailwind.css --minify"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "tailwindcss": "^3.4.1"
+  }
+}

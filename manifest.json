@@ -1,29 +1,35 @@
-﻿{
+{
   "manifest_version": 3,
-  "name": "Zoom -> Zalo Auto Scheduler",
+  "name": "Zalo CSV Batch",
   "version": "1.0.0",
-  "description": "Hen gio roi Zoom, chuyen sang Zalo Web va gui tin nhan.",
-  "permissions": ["tabs", "storage", "scripting", "alarms"],
+  "description": "Import CSV, gui tin nhan Zalo theo zid va theo doi phan hoi.",
+  "permissions": ["tabs", "storage", "scripting", "alarms", "debugger", "unlimitedStorage"],
   "host_permissions": [
     "https://*.zoom.us/*",
-    "https://chat.zalo.me/*"
+    "https://chat.zalo.me/*",
+    "https://script.google.com/*",
+    "https://script.googleusercontent.com/*"
   ],
   "background": {
     "service_worker": "background.js"
   },
   "action": {
-    "default_popup": "popup.html",
-    "default_title": "Zoom -> Zalo"
+    "default_popup": "popup/popup.html",
+    "default_title": "Zalo CSV Batch"
+  },
+  "options_ui": {
+    "page": "settings/settings.html",
+    "open_in_tab": true
   },
   "content_scripts": [
     {
       "matches": ["https://*.zoom.us/*"],
-      "js": ["zoom-content.js"],
+      "js": ["content-scripts/zoom-content.js"],
       "run_at": "document_idle"
     },
     {
       "matches": ["https://chat.zalo.me/*"],
-      "js": ["zalo-content.js"],
+      "js": ["content-scripts/zalo-content.js"],
       "run_at": "document_idle"
     }
   ]

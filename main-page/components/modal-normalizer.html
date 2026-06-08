@@ -1,0 +1,63 @@
+<!-- MODAL: TRÌNH CHUẨN HÓA DANH BẠ AI (AI NORMALIZER MODAL) -->
+<div id="aiNormalizerModal"
+  class="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center z-50 hidden transition-all duration-200">
+  <div
+    class="bg-white rounded-xl border border-slate-200 shadow-2xl w-full max-w-3xl mx-4 overflow-hidden transform scale-95 transition-transform duration-250 flex flex-col max-h-[80vh]"
+    id="aiNormalizerCard">
+    <div class="p-4 bg-slate-900 text-white flex justify-between items-center flex-shrink-0">
+      <div class="flex items-center gap-2">
+        <span class="text-base">✨</span>
+        <div>
+          <h3 class="font-bold text-xs text-white">AI Chuẩn hóa Danh bạ</h3>
+          <p class="text-[10px] text-slate-400">Gemini LLM đề xuất xưng hô, tách tên và phân nhóm danh bạ</p>
+        </div>
+      </div>
+      <button id="btnCloseAiNormalizer" class="text-slate-400 hover:text-white transition-colors">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+    </div>
+
+    <div class="p-4 space-y-3 overflow-y-auto flex-1 text-xs">
+      <div class="border border-slate-200 rounded-lg overflow-hidden bg-slate-50">
+        <div class="max-h-[300px] overflow-y-auto no-scrollbar">
+          <table class="w-full text-left border-collapse text-[11px]">
+            <thead
+              class="bg-slate-100 border-b border-slate-200 font-bold text-slate-500 uppercase text-[9px] sticky top-0 z-10">
+              <tr>
+                <th class="px-3 py-2">Tên hiển thị gốc</th>
+                <th class="px-3 py-2">SĐT</th>
+                <th class="px-3 py-2 text-indigo-700">Xưng hô AI</th>
+                <th class="px-3 py-2 text-indigo-700">Tên AI</th>
+                <th class="px-3 py-2 text-indigo-700">Nhãn AI</th>
+              </tr>
+            </thead>
+            <tbody id="aiNormalizerPreviewBody" class="divide-y divide-slate-200 bg-white">
+              <tr>
+                <td colspan="5" class="text-center py-10 text-slate-400">
+                  Chưa chạy phân tích. Hãy bấm "AI Phân tích" ở dưới.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="p-3 bg-slate-50 border-t border-slate-200 flex justify-between items-center flex-shrink-0">
+      <span id="aiNormalizerStatus" class="text-[11px] text-slate-500 font-semibold"></span>
+      <div class="flex gap-1.5">
+        <button id="btnCancelAiNormalizer"
+          class="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-500 hover:bg-slate-100 transition-colors">Đóng</button>
+        <button id="btnRunAiNormalizer"
+          class="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-xs transition-all active:scale-95">
+          <span>✨</span> AI phân tích
+        </button>
+        <button id="btnApplyAiNormalizer"
+          class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition-all active:scale-95 hidden">
+          Áp dụng toàn bộ
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

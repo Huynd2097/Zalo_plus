@@ -1,0 +1,72 @@
+<!-- MODAL THÊM LIÊN HỆ MỚI -->
+<div id="contactModal"
+  class="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center z-50 hidden transition-all duration-200">
+  <div
+    class="bg-white rounded-xl border border-slate-200 shadow-2xl w-full max-w-sm mx-4 overflow-hidden transform scale-95 transition-transform duration-250"
+    id="modalCard">
+    <div class="p-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
+      <h3 class="font-bold text-slate-900 text-xs flex items-center gap-1.5">
+        <i data-lucide="user-plus" class="text-indigo-600 w-4 h-4"></i>
+        Thêm liên hệ mới
+      </h3>
+      <button id="btnCloseContactModal" class="text-slate-400 hover:text-slate-600 transition-colors">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+    </div>
+    <div class="p-4 space-y-3 text-xs">
+      <div>
+        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-0.5">Tên hiển thị *</label>
+        <input id="m_displayName" type="text" placeholder="abc - Chị Lan - 098..."
+          class="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg outline-none text-xs">
+      </div>
+      <div class="grid grid-cols-2 gap-2">
+        <div>
+          <label class="block text-[10px] font-bold text-slate-400 uppercase mb-0.5">SĐT</label>
+          <input id="m_phone" type="text" placeholder="0987654..."
+            class="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg outline-none text-xs">
+        </div>
+        <div>
+          <label class="block text-[10px] font-bold text-slate-400 uppercase mb-0.5">ZID</label>
+          <input id="m_zid" type="text" placeholder="Zalo ID"
+            class="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg outline-none text-xs">
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-2">
+        <div>
+          <label class="block text-[10px] font-bold text-slate-400 uppercase mb-0.5">Xưng hô</label>
+          <select id="m_ac"
+            class="w-full px-2 py-1.5 border border-slate-200 rounded-lg outline-none bg-white text-xs">
+            <option value="bạn">Bạn</option>
+            <option value="anh">Anh</option>
+            <option value="chị">Chị</option>
+            <option value="em">Em</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-[10px] font-bold text-slate-400 uppercase mb-0.5">Tên gọi</label>
+          <input id="m_name" type="text" placeholder="Lan"
+            class="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg outline-none text-xs">
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-2">
+        <div>
+          <label class="block text-[10px] font-bold text-slate-400 uppercase mb-0.5">Nhãn (Tag)</label>
+          <input id="m_tag" type="text" placeholder="VIP"
+            class="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg outline-none text-xs">
+        </div>
+        <div>
+          <label class="block text-[10px] font-bold text-slate-400 uppercase mb-0.5">Màu</label>
+          <input id="m_tagColor" type="color" value="#4f46e5"
+            class="w-full h-7 border border-slate-200 rounded bg-white cursor-pointer">
+        </div>
+      </div>
+    </div>
+    <div class="p-3 bg-slate-50 border-t border-slate-200 flex justify-end gap-1.5">
+      <button id="btnCancelAddContact"
+        class="px-3 py-1.5 rounded-lg text-slate-500 hover:bg-slate-100 transition-colors text-[11px] font-semibold">Hủy</button>
+      <button id="btnSaveContact"
+        class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg transition-all active:scale-95 text-[11px]">Lưu
+        lại</button>
+    </div>
+  </div>
+</div>

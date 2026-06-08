@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cài đặt hệ thống - Z-Campaigner</title>
+  <script src="../vendor/tailwindcss.js"></script>
+  <script src="../vendor/lucide.min.js"></script>
+</head>
+
+<body class="min-h-screen bg-slate-100 text-slate-800 antialiased">
+  <header class="sticky top-0 z-10 bg-white border-b border-slate-200 shadow-sm">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
+      <div class="flex items-center gap-3 min-w-0">
+        <button id="backBtn" type="button"
+          class="p-2 hover:bg-slate-100 rounded-md text-slate-500 transition-colors" title="Quay lại">
+          <i data-lucide="chevron-left" class="w-5 h-5"></i>
+        </button>
+        <div class="flex items-center gap-2 min-w-0">
+          <div class="bg-indigo-600 text-white p-1.5 rounded-md">
+            <i data-lucide="settings" class="w-4.5 h-4.5"></i>
+          </div>
+          <h1 class="text-lg font-semibold text-slate-900 truncate">Cài đặt hệ thống</h1>
+        </div>
+      </div>
+      <span id="saveStatus" class="text-xs font-semibold text-slate-400"></span>
+    </div>
+  </header>
+
+  <main class="max-w-5xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+    <section class="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+      <div class="bg-slate-50 border-b border-slate-200 px-5 py-3 flex items-center gap-2">
+        <i data-lucide="database" class="w-4.5 h-4.5 text-emerald-600"></i>
+        <h2 class="font-semibold text-slate-700">Tích hợp Google Sheets</h2>
+      </div>
+
+      <div class="p-5 space-y-5">
+        <div>
+          <label for="googleSheetUrlInput" class="block text-sm font-medium text-slate-700 mb-1">
+            Google Apps Script Web App URL
+          </label>
+          <input id="googleSheetUrlInput" type="url"
+            placeholder="https://script.google.com/macros/s/AKfycb.../exec"
+            class="w-full border border-slate-300 rounded-md py-2 px-3 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500">
+          <p class="text-xs text-slate-500 mt-1 flex items-center gap-1">
+            <i data-lucide="info" class="w-3 h-3"></i>
+            Ext sẽ POST dữ liệu khi gửi tin nhắn thành công hoặc có phản hồi mới.
+          </p>
+        </div>
+
+        <div class="border border-blue-100 bg-blue-50/60 rounded-md p-5">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+            <h3 class="text-sm font-bold text-blue-800 flex items-center gap-2">
+              <i data-lucide="info" class="w-4 h-4"></i>
+              Ext gửi đi
+            </h3>
+            <div class="flex items-center gap-2">
+              <button id="copyPayloadBtn" type="button"
+                class="inline-flex items-center gap-1.5 bg-white border border-blue-200 hover:bg-blue-50 text-blue-700 px-3 py-1.5 rounded-md transition-colors text-sm font-medium shadow-sm">
+                <i data-lucide="copy" class="w-4 h-4"></i>
+                Copy mẫu
+              </button>
+              <button id="sendTestBtn" type="button"
+                class="inline-flex items-center gap-1.5 bg-white border border-blue-200 hover:bg-blue-50 text-blue-700 px-3 py-1.5 rounded-md transition-colors text-sm font-medium shadow-sm">
+                <i data-lucide="send" class="w-4 h-4"></i>
+                Send test
+              </button>
+            </div>
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-4">
+            <div>
+              <h4 class="text-xs font-bold text-blue-800 mb-2">1. Ext gửi đi</h4>
+              <pre id="payloadPreview"
+                class="text-xs text-slate-700 bg-white p-3 rounded border border-blue-100 overflow-x-auto whitespace-pre-wrap leading-relaxed"></pre>
+            </div>
+            <div>
+              <h4 class="text-xs font-bold text-blue-800 mb-2">2. Ext nhận về</h4>
+              <pre id="responsePreview"
+                class="text-xs text-slate-700 bg-white p-3 rounded border border-blue-100 overflow-x-auto whitespace-pre-wrap leading-relaxed"></pre>
+            </div>
+          </div>
+
+          <div class="mt-4">
+            <label for="testResponseBox" class="block text-xs font-bold text-blue-800 mb-2">
+              2.1 Test ext nhận về
+            </label>
+            <textarea id="testResponseBox" readonly
+              class="w-full min-h-[120px] resize-y text-xs text-slate-700 bg-white p-3 rounded border border-blue-100 overflow-auto leading-relaxed focus:outline-none focus:ring-1 focus:ring-blue-300"
+              placeholder="Bấm Send test để xem response/lỗi ext nhận được..."></textarea>
+          </div>
+
+          <div id="testResult" class="hidden mt-3 text-sm font-semibold rounded-md border px-3 py-2"></div>
+        </div>
+
+        <div class="border border-amber-100 bg-amber-50/70 rounded-md p-4">
+          <h3 class="text-sm font-bold text-amber-800 flex items-center gap-2 mb-2">
+            <i data-lucide="list-checks" class="w-4 h-4"></i>
+            Yêu cầu cho Apps Script
+          </h3>
+          <ul id="scriptRequirements" class="list-disc pl-5 text-xs text-amber-900 space-y-1"></ul>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="settings.js"></script>
+</body>
+
+</html>

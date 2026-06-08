@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Z-Campaigner — Bảng điều khiển Zalo Marketing tự động</title>
+  
+  <!-- CSS Stylesheet -->
+  <link rel="stylesheet" href="main.css">
+  
+  <!-- Tailwind CSS & Lucide Icons Local -->
+  <script src="../vendor/tailwindcss.js"></script>
+  <script src="../vendor/lucide.min.js"></script>
+
+  <!-- SheetJS để Xuất Excel & CSV Utility -->
+  <script src="../vendor/xlsx.full.min.js"></script>
+  <script src="../shared/csv-util.js"></script>
+</head>
+
+<body class="bg-slate-50/50 flex flex-col h-screen text-slate-600 antialiased overflow-hidden selection:bg-indigo-500 selection:text-white">
+
+  <!-- NAVIGATION BAR COMPONENT -->
+  <div data-include="nav.html"></div>
+
+  <!-- MAIN CONTAINER -->
+  <main class="max-w-full mx-auto pb-12 flex-1 flex flex-col w-full relative overflow-y-auto overflow-x-hidden overscroll-contain">
+    
+    <!-- TAB 1: CHIẾN DỊCH GỬI TIN -->
+    <section id="campaignTab" class="space-y-4" data-include="campaign-tab.html"></section>
+
+    <!-- TAB 2: QUẢN LÝ DANH BẠ -->
+    <section id="contactsTab" class="space-y-4 hidden" data-include="contacts-tab.html"></section>
+
+  </main>
+
+  <!-- MODAL: TỔNG HỢP PHẢN HỒI -->
+  <div data-include="modal-summary.html"></div>
+
+  <!-- MODAL: AI NORMALIZER -->
+  <div data-include="modal-normalizer.html"></div>
+
+  <!-- MODAL: THÊM LIÊN HỆ -->
+  <div data-include="modal-add-contact.html"></div>
+
+  <!-- TOAST NOTIFICATION -->
+  <div data-include="toast.html"></div>
+
+  <!-- SCRIPT LOGIC VẬN HÀNH (Mô-đun hóa) -->
+  <script src="js/state.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/contacts.js"></script>
+  <script src="js/queue.js"></script>
+  <script src="js/ai.js"></script>
+  <script src="js/import.js"></script>
+  <script src="js/modals.js"></script>
+  <script src="js/init.js"></script>
+</body>
+
+</html>
