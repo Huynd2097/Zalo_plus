@@ -189,7 +189,12 @@
                   <div class="w-7 h-4 bg-slate-200 rounded-full peer peer-checked:bg-emerald-600 transition-colors after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-slate-350 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:after:translate-x-3"></div>
                 </label>
               </div>
-              <p class="text-[9px] text-slate-400 leading-tight">Đại diện lấy phản hồi tự động nếu khách có nhắn lại.</p>
+              <label class="flex items-center justify-between gap-2 text-[10px] font-bold text-slate-500 mt-1">
+                <span class="whitespace-nowrap">Tối đa reply</span>
+                <input type="number" id="replyCollectionLimitInput" min="0" step="1" value="0" title="0 = lấy đến khi bạn dừng"
+                  class="w-16 p-0.5 bg-white border border-slate-200 rounded text-[10px] focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-all font-semibold text-slate-600 text-right">
+              </label>
+              <p class="text-[9px] text-slate-400 leading-tight">0 = lấy đến khi bạn dừng.</p>
             </div>
           </div>
 

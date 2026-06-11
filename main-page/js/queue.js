@@ -257,7 +257,7 @@ function summarizeRepliesLocal() {
   } else {
     emptyState.classList.add("hidden");
     tbody.innerHTML = activeReplies.map(row => {
-      const displayReplies = (row.replies || []).slice(0, 5).join('; ');
+      const displayReplies = (row.replies || []).join('; ');
       return `
         <tr class="hover:bg-slate-50 text-xs">
           <td class="px-3 py-2 font-bold text-slate-800">${escapeHtml(row.values?.name || row.values?.display_name || row.id)}</td>
@@ -504,7 +504,7 @@ function renderQueueTable() {
       if (header === 'name') value = stripZaloTags(value || row.values?.display_name || '');
       if (header === 'display_name') value = stripZaloTags(value);
       if (header === 'phone') value = formatDisplayPhone(row.values?.phone || row.values?.sys_phone || '');
-      if (header === 'replies') value = (row.replies || []).slice(0, 5).join('\n');
+      if (header === 'replies') value = (row.replies || []).join('\n');
       if (header === 'error') value = row.error || '';
 
       if (header === 'media_id') {
@@ -557,7 +557,7 @@ function renderQueueTable() {
         return `<td class="${getQueueCellClass(header)}"><div ${divAttrs}>${escapeHtml(value)}</div></td>`;
       }
       if (header === 'replies') {
-        const replyLines = (row.replies || []).slice(0, 5);
+        const replyLines = (row.replies || []);
         const replyHtml = replyLines.map(r => `<div>${escapeHtml(r)}</div>`).join('');
         const divClasses = "max-h-[110px] overflow-y-auto leading-snug text-indigo-700 font-extrabold bg-indigo-50/30 p-1.5 -mx-1.5 rounded w-full block";
         return `<td class="${getQueueCellClass(header)}"><div class="${divClasses}">${replyHtml}</div></td>`;

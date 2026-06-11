@@ -2,7 +2,8 @@
 
 const CONTACT_MAP_STORAGE_KEY = 'zaloContactMap';
 const BATCH_POLL_DELAY_MS = 5000;
-const MAX_REPLIES_PER_ROW = 5;
+const REPLY_COLLECTION_LIMIT_KEY = 'replyCollectionLimit';
+const DEFAULT_REPLY_COLLECTION_LIMIT = 0;
 const RETRY_SEND_DELAY_MS = 5000;
 const REQUIRED_BATCH_COLUMNS = ['message'];
 const WAIT_REPLY_BATCH_COLUMN = 'wait_reply';

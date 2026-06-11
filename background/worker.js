@@ -298,7 +298,15 @@ async function verifyChatRecipient(tabId, row) {
  * @param {string} sentMessage - Tin nhắn mình đã gửi làm mốc
  * @returns {Promise<string[]>} Các tin nhắn phản hồi của đối phương
  */
-async function readIncomingMessages(tabId, sentMessage) {
+async function getReplyCollectionLimit() {
+  const data = await storageGet([REPLY_COLLECTION_LIMIT_KEY]);
+  const raw = Number(data[REPLY_COLLECTION_LIMIT_KEY]);
+  if (!Number.isFinite(raw) || raw < 0) return DEFAULT_REPLY_COLLECTION_LIMIT;
+  return Math.floor(raw);
+}
+
+async function readIncomingMessages(tabId, sentMessage, replyLimit = DEFAULT_REPLY_COLLECTION_LIMIT) {
+  const maxReplies = Math.max(0, Math.floor(Number(replyLimit) || 0));
   const result = await evaluateValue(tabId, `(() => {
     const normalize = (text) => (text || '').replace(/\\u00a0/g, ' ').replace(/\\s+/g, ' ').trim();
     const sentMsg = ${JSON.stringify(sentMessage || '')};
@@ -375,7 +383,8 @@ async function readIncomingMessages(tabId, sentMessage) {
        }
     }
 
-    return { ok: true, items: items.slice(0, ${MAX_REPLIES_PER_ROW}), debug: { messagesCount: messages.length, startIndex, foundItems: items.length } };
+    const maxReplies = ${maxReplies};
+    return { ok: true, items: maxReplies > 0 ? items.slice(0, maxReplies) : items, debug: { messagesCount: messages.length, startIndex, foundItems: items.length } };
   })()`);
 
   if (!result?.ok || !Array.isArray(result.items)) {
@@ -558,12 +567,13 @@ async function sendQueueRow(tabId, row) {
  * @param {string[]} incomingItems - Mảng các tin nhắn phản hồi mới từ đối phương
  * @returns {void}
  */
-function mergeReplies(row, incomingItems) {
+function mergeReplies(row, incomingItems, replyLimit = DEFAULT_REPLY_COLLECTION_LIMIT) {
+  const maxReplies = Math.max(0, Math.floor(Number(replyLimit) || 0));
+  const existing = Array.isArray(row.replies) ? row.replies : [];
   if (!incomingItems || !incomingItems.length) {
-    row.status = 'wait_reply';
+    row.status = maxReplies > 0 && existing.length >= maxReplies ? 'done' : 'wait_reply';
     return false;
   }
-  const existing = Array.isArray(row.replies) ? row.replies : [];
   const seen = new Set(existing.map((item) => normalizeLookupText(item)));
 
   // Lọc chỉ lấy tin nhắn mới thực sự (chưa có trong existing)
@@ -574,18 +584,18 @@ function mergeReplies(row, incomingItems) {
 
   // Nếu không có tin nhắn mới nào, giữ nguyên trạng thái
   if (newItems.length === 0) {
-    row.status = 'wait_reply';
+    row.status = maxReplies > 0 && existing.length >= maxReplies ? 'done' : 'wait_reply';
     return false;
   }
 
   for (const item of newItems) {
     existing.push(item);
     seen.add(normalizeLookupText(item));
-    if (existing.length >= MAX_REPLIES_PER_ROW) break;
+    if (maxReplies > 0 && existing.length >= maxReplies) break;
   }
-  row.replies = existing.slice(0, MAX_REPLIES_PER_ROW);
+  row.replies = maxReplies > 0 ? existing.slice(0, maxReplies) : existing;
   row.values.replies = row.replies.join('\n');
-  row.status = row.replies.length >= MAX_REPLIES_PER_ROW ? 'done' : 'wait_reply';
+  row.status = maxReplies > 0 && row.replies.length >= maxReplies ? 'done' : 'wait_reply';
   return true;
 }
 
@@ -633,8 +643,9 @@ async function pollQueueReplies(tabId) {
 
   try {
     const sentMessage = String(row.values.message || '').trim();
-    const incoming = await withZaloActionLock(() => readIncomingMessages(tabId, sentMessage));
-    const hasNewReplies = mergeReplies(row, incoming);
+    const replyLimit = await getReplyCollectionLimit();
+    const incoming = await withZaloActionLock(() => readIncomingMessages(tabId, sentMessage, replyLimit));
+    const hasNewReplies = mergeReplies(row, incoming, replyLimit);
     
     const updatedRow = await updateQueueRow(row.id, {
       values: row.values,
@@ -710,8 +721,9 @@ async function updateCurrentWaitFromActiveChat(tabId, current) {
 
   try {
     const sentMessage = String(row.values.message || '').trim();
-    const incoming = await readIncomingMessages(tabId, sentMessage);
-    const hasNewReplies = mergeReplies(row, incoming);
+    const replyLimit = await getReplyCollectionLimit();
+    const incoming = await readIncomingMessages(tabId, sentMessage, replyLimit);
+    const hasNewReplies = mergeReplies(row, incoming, replyLimit);
     
     const updatedRow = await updateQueueRow(row.id, {
       values: row.values,

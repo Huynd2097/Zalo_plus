@@ -50,7 +50,7 @@ function insertComposerToken(token) {
  */
 async function initialize() {
   // Load API Key từ Chrome Storage
-  const apiData = await chrome.storage.local.get(['geminiApiKey']);
+  const apiData = await chrome.storage.local.get(['geminiApiKey', REPLY_COLLECTION_LIMIT_KEY]);
   apiKey = apiData.geminiApiKey || '';
   const apiKeyInput = document.getElementById("geminiApiKeyInput");
   if (apiKeyInput) {
@@ -63,6 +63,18 @@ async function initialize() {
   }
 
   // Load danh bạ và hàng chờ gửi ban đầu
+  const replyLimitInput = document.getElementById("replyCollectionLimitInput");
+  if (replyLimitInput) {
+    const savedLimit = Number(apiData[REPLY_COLLECTION_LIMIT_KEY]);
+    replyLimitInput.value = Number.isFinite(savedLimit) && savedLimit >= 0 ? String(Math.floor(savedLimit)) : "0";
+    replyLimitInput.addEventListener('change', async () => {
+      const value = Math.max(0, Math.floor(Number(replyLimitInput.value) || 0));
+      replyLimitInput.value = String(value);
+      await chrome.storage.local.set({ [REPLY_COLLECTION_LIMIT_KEY]: value });
+      showToast('Đã lưu số reply tối đa.');
+    });
+  }
+
   await loadContacts();
   await pollStatus();
   await deduplicateQueueByZid(); // Loại bỏ các dòng trùng zid khi load lần đầu
@@ -316,7 +328,7 @@ async function initialize() {
       const values = { ...row.values };
       values.name = stripZaloTags(values.name || values.display_name || '');
       values.phone = values.phone || values.sys_phone || '';
-      values.replies = (row.replies || []).slice(0, 5).join('\n');
+      values.replies = (row.replies || []).join('\n');
       values.error = row.error || '';
       values.status = row.status || 'pending';
       values.send_at = formatTime(values.send_at);

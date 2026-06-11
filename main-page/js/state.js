@@ -26,6 +26,7 @@ let composerAttachedImage = null; // { name: string, base64: string, mediaId: st
 // ĐỊNH NGHĨA HEADERS CHO IMPORT/EXPORT TEMPLATE
 const TEMPLATE_HEADERS = ['name', 'phone', 'send_at', 'wait_reply', 'message', 'zid'];
 const HIDDEN_TABLE_HEADERS = ['sys_phone'];
+const REPLY_COLLECTION_LIMIT_KEY = 'replyCollectionLimit';
 
 const TEMPLATE_NOTE_ROW = {
   name: 'Không bắt buộc. Nhập đúng tên Zalo để map zid đã lưu; tên có thể chứa SĐT để hệ thống tách ra match.',
