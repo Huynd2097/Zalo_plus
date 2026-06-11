@@ -61,10 +61,12 @@ function showToast(message, type = "success") {
 /** Biến nội bộ theo dõi timer undo đang hoạt động */
 let _undoTimer = null;
 let _undoEl = null;
+let _undoCommit = null;
+let _undoCountdownTimer = null;
 
 /**
- * Hiển thị mini popup có nút Undo trong 10 giây.
- * Nếu hết 10 giây mà không undo thì gọi onCommit để thực hiện hành động thật.
+ * Hiển thị mini popup có nút Undo trong 5 giây.
+ * Nếu hết 5 giây mà không undo thì gọi onCommit để thực hiện hành động thật.
  * @param {string} message - Thông báo hiển thị
  * @param {Function} onUndo - Hàm gọi khi bấm Undo
  * @param {Function} onCommit - Hàm gọi khi hết thời gian chờ (thực hiện xoá thật)
@@ -74,6 +76,10 @@ function showUndoToast(message, onUndo, onCommit) {
   if (_undoTimer) {
     clearTimeout(_undoTimer);
     _undoTimer = null;
+    clearInterval(_undoCountdownTimer);
+    _undoCountdownTimer = null;
+    if (typeof _undoCommit === 'function') _undoCommit();
+    _undoCommit = null;
   }
   if (_undoEl) {
     _undoEl.remove();
@@ -90,7 +96,7 @@ function showUndoToast(message, onUndo, onCommit) {
 
   const countdownSpan = document.createElement('span');
   countdownSpan.className = 'text-[10px] text-slate-400 font-mono tabular-nums min-w-[24px] text-center';
-  countdownSpan.innerText = '10s';
+  countdownSpan.innerText = '5s';
 
   const undoBtn = document.createElement('button');
   undoBtn.className = 'bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-bold px-3 py-1 rounded-lg transition-all active:scale-95';
@@ -101,20 +107,24 @@ function showUndoToast(message, onUndo, onCommit) {
   el.appendChild(undoBtn);
   document.body.appendChild(el);
   _undoEl = el;
+  _undoCommit = onCommit;
 
-  let secondsLeft = 10;
+  let secondsLeft = 5;
 
   const countdownInterval = setInterval(() => {
     secondsLeft--;
     countdownSpan.innerText = `${secondsLeft}s`;
     if (secondsLeft <= 0) clearInterval(countdownInterval);
   }, 1000);
+  _undoCountdownTimer = countdownInterval;
 
   /** Gỡ popup và dọn dẹp */
   function dismiss() {
     clearTimeout(_undoTimer);
     clearInterval(countdownInterval);
     _undoTimer = null;
+    _undoCountdownTimer = null;
+    _undoCommit = null;
     if (_undoEl === el) _undoEl = null;
     el.style.opacity = '0';
     el.style.transform = 'translateX(-50%) translateY(20px)';
@@ -130,7 +140,7 @@ function showUndoToast(message, onUndo, onCommit) {
   _undoTimer = setTimeout(() => {
     dismiss();
     if (typeof onCommit === 'function') onCommit();
-  }, 10000);
+  }, 5000);
 }
 
 /**

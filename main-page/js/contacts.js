@@ -386,7 +386,7 @@ function renderContactsDatabaseTable() {
     });
   });
 
-  // Sự kiện nút xóa contact — hỗ trợ undo 10 giây
+  // Sự kiện nút xóa contact — hỗ trợ undo 5 giây
   tbody.querySelectorAll('.btn-delete-contact').forEach(btn => {
     btn.addEventListener('click', async () => {
       const tr = btn.closest('tr');
