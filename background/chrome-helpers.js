@@ -97,6 +97,13 @@ async function detachDebugger(tabId) {
   }
 }
 
+async function detachAllDebuggers() {
+  const tabIds = Array.from(debuggerAttachedTabs);
+  for (const tabId of tabIds) {
+    await detachDebugger(tabId);
+  }
+}
+
 async function pressKey(tabId, key, code, vk, extra = {}) {
   await debuggerCommand(tabId, 'Input.dispatchKeyEvent', {
     type: 'keyDown',

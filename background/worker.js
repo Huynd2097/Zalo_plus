@@ -918,6 +918,7 @@ async function pauseWorker() {
   if (!state.running) return state;
 
   const nextState = await saveWorkerState({ phase: 'paused', message: 'Đã tạm dừng hoạt động.' });
+  await withZaloActionLock(detachAllDebuggers);
   return nextState;
 }
 
@@ -927,6 +928,7 @@ async function pauseWorker() {
  */
 async function stopWorker() {
   const nextState = await saveWorkerState({ running: false, phase: 'idle', currentRowId: null, currentWait: null, message: 'Đã dừng hoạt động hàng chờ.' });
+  await withZaloActionLock(detachAllDebuggers);
   
   // Đưa tất cả các dòng wait_reply sang done
   const queue = await loadQueue();
