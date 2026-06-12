@@ -87,6 +87,120 @@ async function typeAndSendZalo(tabId, message) {
   }
 }
 
+function formatZaloReminderDateTime(value) {
+  const date = new Date(Number(value) || value);
+  if (!Number.isFinite(date.getTime())) {
+    throw new Error('Thoi gian nhac hen khong hop le.');
+  }
+  const pad = (num) => String(num).padStart(2, '0');
+  return {
+    date: `${pad(date.getDate())}/${pad(date.getMonth() + 1)}/${date.getFullYear()}`,
+    time: `${pad(date.getHours())}:${pad(date.getMinutes())}`
+  };
+}
+
+async function focusAndFillSelector(tabId, selector, text, timeoutMs = 8000) {
+  const point = await waitForValue(tabId, `(() => {
+    const el = document.querySelector(${JSON.stringify(selector)});
+    if (!el) return null;
+    const r = el.getBoundingClientRect();
+    return r.width && r.height ? { x: r.x + r.width / 2, y: r.y + r.height / 2 } : null;
+  })()`, timeoutMs, 250);
+  if (!point) throw new Error(`Khong tim thay o nhap ${selector}.`);
+
+  await clickPoint(tabId, point);
+  await sleep(120);
+  await clearFocusedText(tabId);
+  await sleep(120);
+  await insertText(tabId, text);
+  await sleep(200);
+}
+
+async function waitAndClickFixedSelector(tabId, selector, errMessage) {
+  const found = await waitForValue(tabId, `(() => {
+    const els = Array.from(document.querySelectorAll(${JSON.stringify(selector)}));
+    const visibleEl = els.find(e => e.getBoundingClientRect().width > 0);
+    return visibleEl ? true : null;
+  })()`, 5000, 250);
+
+  if (!found) throw new Error(errMessage);
+
+  await sleep(600); // Đợi UI mở ra
+
+  await evaluateValue(tabId, `(() => {
+    const els = Array.from(document.querySelectorAll(${JSON.stringify(selector)}));
+    const visibleEl = els.find(e => e.getBoundingClientRect().width > 0);
+    if (!visibleEl) return null;
+    const btn = visibleEl.closest('div, button, [role="button"]') || visibleEl;
+    btn.click();
+  })()`);
+}
+
+async function createReminderCurrentChat(tabId, reminderAt, text) {
+  const message = String(text || '').trim();
+  if (!message) throw new Error('Thieu noi dung nhac hen.');
+  const reminder = formatZaloReminderDateTime(reminderAt);
+
+  const menuReady = await waitForValue(tabId, `(() => !!document.querySelector('[data-id="div_More_Menu"]'))()`, 5000, 250);
+  if (!menuReady) throw new Error('Khong mo duoc menu Them cua Zalo.');
+
+  const jsCodeOpenReminder = `(() => {
+    const btn = document.querySelector('[data-id="div_More_Menu"]');
+    if (btn) btn.click();
+    
+    let attempts = 0;
+    const interval = setInterval(() => {
+      const reminderBtn = document.querySelector('[class="fa fa-Reminder_24_Line menu-icon left"]');
+      if (reminderBtn) {
+        reminderBtn.click();
+        clearInterval(interval);
+      }
+      if (++attempts > 20) clearInterval(interval);
+    }, 100);
+  })()`;
+  await evaluateValue(tabId, jsCodeOpenReminder);
+  await sleep(1500); // Chờ popup nhắc hẹn mở ra ban đầu
+
+  // 1. Điền text (nội dung) trước khi bấm Tuỳ chỉnh để không bị che
+  await focusAndFillSelector(tabId, '.plain-text-wrapper', message);
+  await sleep(600);
+
+  // 2. Click nút "Tuỳ chỉnh" (Other) để mở rộng ô chọn ngày/giờ
+  const jsCodeClickOther = `(() => {
+    let attempts = 0;
+    const interval = setInterval(() => {
+      const otherBtn = document.querySelector('[data-translate-inner="STR_OTHER"]');
+      if (otherBtn) {
+        otherBtn.click();
+        clearInterval(interval);
+      }
+      if (++attempts > 20) clearInterval(interval);
+    }, 100);
+  })()`;
+  await evaluateValue(tabId, jsCodeClickOther);
+  await sleep(800);
+
+  // 3. Lúc này ô nhập ngày/giờ mới hiện lên, tiến hành nhập
+  await focusAndFillSelector(tabId, 'input[data-id="txt_RMD_Date"]', reminder.date);
+  await focusAndFillSelector(tabId, 'input[data-id="txt_RMD_Time"]', reminder.time);
+  await sleep(800);
+
+  // 4. Click tạo
+  const jsCodeFinish = `(() => {
+    let attempts = 0;
+    const interval = setInterval(() => {
+      const createBtn = document.querySelector('[data-translate-inner="STR_CREATE_REMINDER"]');
+      if (createBtn) {
+        createBtn.click();
+        clearInterval(interval);
+      }
+      if (++attempts > 20) clearInterval(interval);
+    }, 100);
+  })()`;
+  await evaluateValue(tabId, jsCodeFinish);
+  await sleep(1500);
+}
+
 /**
  * Gửi tin nhắn hình ảnh từ Base64 đến cuộc trò chuyện hiện tại bằng cách giả lập paste vào DOM.
  * @param {number} tabId - ID của tab Zalo
@@ -322,7 +436,7 @@ async function searchPhoneSendSmsAndAddFriend(tabId, phone, sms) {
     if (!firstResult) throw new Error(`Khong tim duoc ket qua dau cho so ${phone}.`);
 
     await clickPoint(tabId, firstResult);
-    
+
     // Đợi cho cuộc hội thoại khớp với kết quả tìm kiếm được mở chính thức
     const opened = await waitForValue(tabId, `(() => {
       const headerEl = document.querySelector('#header .header-title, #header .threadChat__title');
@@ -357,7 +471,7 @@ async function runTask() {
 
   const zoomTab = await findFirstTabByUrl([/\.zoom\.us\//i]);
   if (zoomTab?.id) {
-    await chrome.tabs.update(zoomTab.id, { active: true });
+    await tabsUpdate(zoomTab.id, { active: true });
     await sleep(300);
     await sendToTab(zoomTab.id, { type: 'ZOOM_END' });
     await sleep(1800);
@@ -366,7 +480,7 @@ async function runTask() {
   const zaloTab = await findFirstTabByUrl([/chat\.zalo\.me/i]);
   if (!zaloTab?.id) throw new Error('Khong tim thay tab Zalo.');
 
-  await chrome.tabs.update(zaloTab.id, { active: true });
+  await tabsUpdate(zaloTab.id, { active: true });
   await sleep(500);
   if (schedule.phone) {
     return searchPhoneSendSmsAndAddFriend(zaloTab.id, schedule.phone, schedule.message);

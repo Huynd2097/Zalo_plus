@@ -25,6 +25,7 @@ function normalizeHeaderName(header) {
     zid: 'zid',
     phone: 'phone',
     send_at: 'send_at',
+    note: 'note',
     wait_reply: 'wait_reply',
     message: 'message',
     msg: 'message',

@@ -280,7 +280,7 @@ function summarizeRepliesLocal() {
  */
 function orderHeaders(headers, options = {}) {
   const hidden = options.hidden || [];
-  const standardOrder = ['name', 'phone', 'message', 'replies', 'send_at', 'wait_reply', 'error', 'zid'];
+  const standardOrder = ['name', 'phone', 'message', 'replies', 'send_at', 'note', 'wait_reply', 'error', 'zid'];
   const next = [];
   
   standardOrder.forEach((header) => {
@@ -320,6 +320,7 @@ function getQueueCellClass(header) {
     message: 'min-w-[300px] max-w-[420px]',
     replies: 'min-w-[300px] max-w-[420px]',
     send_at: 'w-[120px] text-slate-500 leading-tight',
+    note: 'w-[70px] text-center',
     wait_reply: 'w-[60px] text-center',
     error: 'w-[150px] max-w-[150px] whitespace-pre-wrap break-words text-rose-600 leading-snug',
     zid: 'w-[160px] max-w-[160px] truncate font-mono text-slate-400'
@@ -482,7 +483,7 @@ function renderQueueTable() {
     "error": "Lỗi"
   };
 
-  const visibleHeaders = ['media_id', 'message', 'replies', 'send_at', 'wait_reply', 'error', 'zid'];
+  const visibleHeaders = ['media_id', 'message', 'replies', 'send_at', 'note', 'wait_reply', 'error', 'zid'];
 
   tbody.innerHTML = filtered.map(row => {
     const isChecked = selectedQueueIds.has(row.id);
@@ -536,6 +537,15 @@ function renderQueueTable() {
         return `<td class="${getQueueCellClass(header)}">${formatTimeTwoLines(value)}</td>`;
       }
 
+      if (header === 'note') {
+        const isReminder = String(value || '').trim().toLowerCase() === 'reminder';
+        return `
+          <td class="${getQueueCellClass(header)}">
+            ${isReminder ? '<i data-lucide="alarm-clock" class="w-4 h-4 text-amber-500 inline-block" title="Nhắc hẹn"></i>' : '<span class="text-slate-300">—</span>'}
+          </td>
+        `;
+      }
+
       if (header === 'wait_reply') {
         const checked = String(value).trim().toLowerCase() === 'x' || row.wait_reply === true ? ' checked' : '';
         return `
@@ -550,7 +560,7 @@ function renderQueueTable() {
         `;
       }
 
-      const editable = !['media_id', 'replies', 'error'].includes(header);
+      const editable = !['media_id', 'note', 'replies', 'error'].includes(header);
       
       if (header === 'message') {
         const divAttrs = `contenteditable="true" data-row-id="${rowId}" data-header="${escapeHtml(header)}" spellcheck="false" class="max-h-[110px] overflow-y-auto whitespace-pre-wrap break-words leading-snug w-full focus:outline-none focus:bg-white focus:ring-1 focus:ring-indigo-400 rounded transition-all"`;
@@ -725,7 +735,7 @@ function findActiveQueueRowByZid(zid) {
   const zidText = String(zid || '').trim();
   if (!zidText || !latestQueue?.byId) return null;
   return Object.values(latestQueue.byId)
-    .filter((row) => String(row.values?.zid || '').trim() === zidText && row.status !== 'done')
+    .filter((row) => String(row.values?.zid || '').trim() === zidText)
     .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))[0] || null;
 }
 
@@ -748,13 +758,18 @@ function resetComposerAfterQueueAdd() {
   const charCount = document.getElementById("composerCharCount");
   const timeInput = document.getElementById("composerScheduleTime");
   const waitReplyInput = document.getElementById("composerWaitReply");
+  const reminderInput = document.getElementById("composerReminder");
 
   if (messageInput) messageInput.value = "";
   if (charCount) charCount.innerText = "0 ký tự";
   if (timeInput) timeInput.value = "";
   if (waitReplyInput) waitReplyInput.checked = false;
+  if (reminderInput) reminderInput.checked = false;
   if (typeof clearComposerAttachedImage === 'function') {
     clearComposerAttachedImage();
+  }
+  if (typeof syncComposerReminderControls === 'function') {
+    syncComposerReminderControls();
   }
 }
 
@@ -769,11 +784,18 @@ async function addSelectedToQueue() {
 
   const rawMsg = document.getElementById("composerMessage").value;
   const rawTime = document.getElementById("composerScheduleTime").value;
-  const waitReply = document.getElementById("composerWaitReply").checked;
+  const isReminder = !!document.getElementById("composerReminder")?.checked;
+  const waitReply = isReminder ? false : document.getElementById("composerWaitReply").checked;
 
   if (!rawMsg.trim() && !composerAttachedImage) {
     showToast("Vui lòng nhập nội dung tin nhắn hoặc đính kèm hình ảnh!", "error");
     document.getElementById("composerMessage").focus();
+    return;
+  }
+
+  if (isReminder && !rawTime) {
+    showToast("Vui lòng chọn ngày giờ nhắc hẹn.", "error");
+    document.getElementById("composerScheduleTime")?.focus();
     return;
   }
 
@@ -784,7 +806,7 @@ async function addSelectedToQueue() {
 
   // Đăng ký ảnh lên Media Store ngầm của Extension trước
   let mediaId = null;
-  if (composerAttachedImage) {
+  if (!isReminder && composerAttachedImage) {
     const base64 = composerAttachedImage.base64;
     const name = composerAttachedImage.name;
     const hash = 'img_' + Math.abs(base64.slice(0, 100).split('').reduce((a,b)=>{a=((a<<5)-a)+b.charCodeAt(0);return a&a},0)).toString(16);
@@ -822,9 +844,17 @@ async function addSelectedToQueue() {
   }
 
   const duplicateRowsByZid = new Map();
+  window._autoOverwrite = new Map();
   listToEnqueue.forEach((contact) => {
     const duplicate = findActiveQueueRowByZid(contact.zid);
-    if (duplicate) duplicateRowsByZid.set(String(contact.zid).trim(), duplicate);
+    if (duplicate) {
+      if (duplicate.status === 'done') {
+        window._autoOverwrite = window._autoOverwrite || new Map();
+        window._autoOverwrite.set(String(contact.zid).trim(), duplicate);
+      } else {
+        duplicateRowsByZid.set(String(contact.zid).trim(), duplicate);
+      }
+    }
   });
 
   let shouldOverwriteDuplicates = false;
@@ -851,22 +881,28 @@ async function addSelectedToQueue() {
       zid: contact.zid || '',
       send_at: sendAtMs || 0,
       wait_reply: waitReply ? 'x' : '',
+      note: isReminder ? 'reminder' : '',
       message: personalizedMsg,
       display_name: contact.display_name || '',
       tag: contact.tag || '',
       tag_color: contact.tag_color || '',
       sys_phone: contact.sys_phone || '',
       media_id: mediaId || '',
-      media_name: composerAttachedImage ? composerAttachedImage.name : '',
-      media_thumbnail: composerAttachedImage ? composerAttachedImage.thumbnail : '',
+      media_name: !isReminder && composerAttachedImage ? composerAttachedImage.name : '',
+      media_thumbnail: !isReminder && composerAttachedImage ? composerAttachedImage.thumbnail : '',
       avatar: contact.avatar || ''
     };
 
-    const duplicate = duplicateRowsByZid.get(String(contact.zid || '').trim());
-    if (duplicate && shouldOverwriteDuplicates) {
+    const zidKey = String(contact.zid || '').trim();
+    const duplicate = duplicateRowsByZid.get(zidKey);
+    const autoOverwrite = window._autoOverwrite?.get(zidKey);
+    if (autoOverwrite) {
+      overwriteIds.push(autoOverwrite.id);
+      newRows.push(rowValues);
+    } else if (duplicate && shouldOverwriteDuplicates) {
       overwriteIds.push(duplicate.id);
       newRows.push(rowValues);
-    } else if (!duplicate) {
+    } else if (!duplicate && !autoOverwrite) {
       newRows.push(rowValues);
     }
   });

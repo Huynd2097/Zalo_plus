@@ -10,7 +10,11 @@ function tabsUpdate(tabId, updateProperties) {
         reject(new Error(chrome.runtime.lastError.message));
         return;
       }
-      resolve(tab);
+      if (updateProperties && updateProperties.active) {
+        setTimeout(() => resolve(tab), 1000);
+      } else {
+        resolve(tab);
+      }
     });
   });
 }
@@ -198,3 +202,4 @@ async function waitForValue(tabId, expression, timeoutMs = 10000, intervalMs = 2
   }
   return null;
 }
+

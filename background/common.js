@@ -166,6 +166,7 @@ function normalizeBatchHeaderName(header) {
     zid: 'zid',
     phone: 'phone',
     send_at: 'send_at',
+    note: 'note',
     wait_reply: 'wait_reply',
     message: 'message',
     display_name: 'display_name',

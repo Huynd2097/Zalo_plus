@@ -500,7 +500,10 @@ async function sendQueueRow(tabId, row) {
   await resolveRowZid(tabId, row);
   const message = String(row.values.message || '').trim();
   const mediaId = String(row.values.media_id || '').trim();
+  const noteValue = String(row.values.note || '').trim().toLowerCase();
+  const isReminder = noteValue === 'reminder' || noteValue === 'nhac hen' || noteValue === 'nhắc hẹn';
   if (!message && !mediaId) throw new Error('Thiếu nội dung tin nhắn và hình ảnh.');
+  if (isReminder && !parseSendAt(row.values?.send_at)) throw new Error('Thiếu thời gian nhắc hẹn.');
 
   const opened = await openBatchRowChatForSend(tabId, row);
   const zid = String(row.values.zid || '').trim();
@@ -514,6 +517,36 @@ async function sendQueueRow(tabId, row) {
     const currentChat = await readCurrentChatInfo(tabId);
     if (currentChat?.display_name) row.values.display_name = currentChat.display_name;
     fillIntermediatePhoneColumns(row.values);
+  }
+
+  if (isReminder) {
+    row.values.wait_reply = '';
+    row.values.media_id = '';
+    row.values.media_name = '';
+    row.values.media_thumbnail = '';
+    await createReminderCurrentChat(tabId, parseSendAt(row.values.send_at), message);
+    if (opened.foundByPhone && !String(row.values.zid || '').trim()) {
+      const currentChat = await readCurrentChatInfo(tabId);
+      if (currentChat?.zid) {
+        row.values.zid = currentChat.zid;
+        if (currentChat.display_name) row.values.display_name = currentChat.display_name;
+      }
+      fillIntermediatePhoneColumns(row.values);
+    }
+    if (String(row.values.zid || zid || '').trim()) {
+      await saveContactMapping(row.values);
+    }
+    if (opened.foundByPhone) {
+      await clickAddFriendIfAvailable(tabId);
+    }
+    const updatedRow = await updateQueueRow(row.id, {
+      values: row.values,
+      status: 'done',
+      sentAt: Date.now(),
+      error: ''
+    });
+    notifyGoogleSheetRow(updatedRow).catch(console.error);
+    return;
   }
 
   if (message) {
@@ -754,6 +787,8 @@ function findNextPendingRow(queue, now, skipIds = null) {
   return Object.values(queue.byId).find((row) => {
     if (skipIds?.has(row.id)) return false;
     if (row.status !== 'pending' || row.error) return false;
+    const isReminder = String(row.values?.note || '').trim().toLowerCase() === 'reminder';
+    if (isReminder) return true;
     const sendAt = parseSendAt(row.values?.send_at);
     return !sendAt || sendAt <= now;
   }) || null;
@@ -768,6 +803,8 @@ function findNextPendingRow(queue, now, skipIds = null) {
 function hasScheduledPendingRows(queue, now) {
   return Object.values(queue.byId).some((row) => {
     if (row.status !== 'pending' || row.error) return false;
+    const isReminder = String(row.values?.note || '').trim().toLowerCase() === 'reminder';
+    if (isReminder) return false;
     const sendAt = parseSendAt(row.values?.send_at);
     return sendAt && sendAt > now;
   });
@@ -778,6 +815,8 @@ function hasSkippedRetryRows(queue, now, skipIds) {
   return Object.values(queue.byId).some((row) => {
     if (!skipIds.has(row.id)) return false;
     if (row.status !== 'pending' || row.error) return false;
+    const isReminder = String(row.values?.note || '').trim().toLowerCase() === 'reminder';
+    if (isReminder) return true;
     const sendAt = parseSendAt(row.values?.send_at);
     return !sendAt || sendAt <= now;
   });
@@ -895,6 +934,17 @@ async function startWorker(waitReplyTabId) {
   }
 
   workerRuntime.waitReplyTabId = waitReplyTabId || null;
+  
+  const queue = await loadQueue();
+  let queueUpdated = false;
+  Object.values(queue.byId).forEach(row => {
+    if (row.status === 'error') {
+      row.status = 'pending';
+      row.error = '';
+      queueUpdated = true;
+    }
+  });
+  if (queueUpdated) await saveQueue(queue);
   const nextState = await saveWorkerState({ running: true, phase: 'sending', currentRowId: null, message: '' });
   
   const zaloTab = await ensureZaloTab();

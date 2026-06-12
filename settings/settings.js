@@ -12,22 +12,24 @@ const samplePayload = {
   wait_reply: true,
   error: '',
   zid: '245830163...',
-  updatedAt: '2026-06-08 14:35'
+  updatedAt: '2026-06-08 14:35',
+  note: 'Nhắc hẹn'
 };
 
 const payloadPreviewText = `{
-  status: 'Đang theo dõi', // trạng thái hiển thị trên bảng
-  name: 'Nguyễn Văn A', // tên người nhận
-  tag: 'Khách Zoom', // nhãn/tag của người nhận
-  phone: '0909123456', // số điện thoại
-  media_id: '', // ảnh đính kèm nếu có
-  message: 'Nội dung tin nhắn...', // nội dung đã gửi
-  replies: 'Tin 1\\nTin 2', // tất cả tin nhắn phản hồi
-  send_at: '2026-06-08 14:30', // thời gian gửi/hẹn gửi
-  wait_reply: true, // có chờ phản hồi hay không
+  status: 'Đang theo dõi', // trạng thái hiển thị trên bảng: Chờ gửi | Đang theo dõi | Hoàn tất | Lỗi
+  name: 'Nguyễn Văn A', // tên người nhận trên Zalo
+  tag: 'Khách Zoom', // phân loại/thẻ gắn trên Zalo
+  phone: '0909123456', // số điện thoại (nếu có)
+  media_id: '', // ID hoặc link ảnh đính kèm nếu có
+  message: 'Nội dung tin nhắn...', // nội dung tin nhắn gửi đi
+  replies: 'Tin 1\\nTin 2', // tất cả tin nhắn phản hồi của người nhận
+  send_at: '2026-06-08 14:30', // thời gian gửi / hẹn gửi / nhắc hẹn
+  wait_reply: true, // true/false - có chờ phản hồi hay không
   error: '', // lỗi hệ thống nếu có
-  zid: '245830163...', // Zalo ID
-  updatedAt: '2026-06-08 14:35' // thời điểm cập nhật
+  zid: '245830163...', // Zalo ID (để nội bộ theo dõi)
+  updatedAt: '2026-06-08 14:35', // thời điểm cập nhật lần cuối
+  note: 'Nhắc hẹn' // ghi chú thêm (VD: reminder, nhắc hẹn...)
 }`;
 
 const responsePreviewText = `{

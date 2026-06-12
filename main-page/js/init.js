@@ -45,6 +45,39 @@ function insertComposerToken(token) {
   textarea.focus();
 }
 
+function syncComposerReminderControls() {
+  const reminderInput = document.getElementById("composerReminder");
+  const waitReplyInput = document.getElementById("composerWaitReply");
+  const replyLimitInput = document.getElementById("replyCollectionLimitInput");
+  const imageInput = document.getElementById("composerImageInput");
+  const imageUploadWrapper = document.getElementById("imageUploadWrapper");
+  const disabled = !!reminderInput?.checked;
+
+  if (waitReplyInput) {
+    waitReplyInput.disabled = disabled;
+    if (disabled) waitReplyInput.checked = false;
+  }
+  if (replyLimitInput) replyLimitInput.disabled = disabled;
+  if (imageInput) imageInput.disabled = disabled;
+  imageUploadWrapper?.classList.toggle("opacity-50", disabled);
+  imageUploadWrapper?.classList.toggle("pointer-events-none", disabled);
+  
+  const waitReplyContainer = document.getElementById("composerWaitReplyContainer");
+  const maxReplyContainer = document.getElementById("composerMaxReplyContainer");
+  if (waitReplyContainer) {
+    waitReplyContainer.classList.toggle("opacity-50", disabled);
+    waitReplyContainer.classList.toggle("pointer-events-none", disabled);
+  }
+  if (maxReplyContainer) {
+    maxReplyContainer.classList.toggle("opacity-50", disabled);
+    maxReplyContainer.classList.toggle("pointer-events-none", disabled);
+  }
+
+  if (disabled && typeof clearComposerAttachedImage === 'function') {
+    clearComposerAttachedImage();
+  }
+}
+
 /**
  * Khởi tạo toàn bộ giao diện và gán các sự kiện lắng nghe sự kiện DOM.
  */
@@ -74,6 +107,9 @@ async function initialize() {
       showToast('Đã lưu số reply tối đa.');
     });
   }
+
+  document.getElementById("composerReminder")?.addEventListener("change", syncComposerReminderControls);
+  syncComposerReminderControls();
 
   await loadContacts();
   await pollStatus();
@@ -323,7 +359,7 @@ async function initialize() {
   // Xuất Excel hàng chờ
   document.getElementById("exportQueueBtn")?.addEventListener("click", () => {
     if (!latestQueue || !Object.keys(latestQueue.byId).length) return;
-    const exportHeaders = ['status', 'name', 'phone', 'message', 'replies', 'send_at', 'wait_reply', 'error', 'zid'];
+    const exportHeaders = ['status', 'name', 'phone', 'message', 'replies', 'send_at', 'note', 'wait_reply', 'error', 'zid'];
     const exportRows = getFilteredQueueRows().map((row) => {
       const values = { ...row.values };
       values.name = stripZaloTags(values.name || values.display_name || '');
@@ -507,6 +543,10 @@ window.addEventListener("beforeunload", () => {
  * @param {Event} e - Sự kiện change của input file
  */
 async function handleComposerImageSelect(e) {
+  if (document.getElementById("composerReminder")?.checked) {
+    if (e.target) e.target.value = "";
+    return;
+  }
   const file = e.target.files?.[0];
   if (!file) return;
   if (!file.type.startsWith('image/')) {

@@ -48,7 +48,7 @@ async function addRowsToQueue(rows, headers) {
   });
 
   // Đảm bảo các cột tối thiểu luôn tồn tại trong headers
-  const required = ['zid', 'send_at', 'wait_reply', 'replies', 'error'];
+  const required = ['zid', 'send_at', 'note', 'wait_reply', 'replies', 'error'];
   required.forEach((r) => {
     if (!queue.headers.includes(r)) {
       queue.headers.push(r);

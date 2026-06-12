@@ -33,18 +33,19 @@ function formatWebhookDate(value) {
 function buildGoogleSheetPayload(row) {
   const values = row?.values || {};
   return {
-    status: getWebhookStatusText(row?.status || 'pending'),
-    name: stripZaloTags(values.name || values.display_name || ''),
-    tag: values.tag || '',
-    phone: values.phone || values.sys_phone || '',
-    media_id: values.media_id || '',
-    message: values.message || '',
-    replies: Array.isArray(row?.replies) ? row.replies.join('\n') : (values.replies || ''),
-    send_at: formatWebhookDate(values.send_at),
-    wait_reply: String(values.wait_reply || '').trim().toLowerCase() === 'x',
-    error: row?.error || '',
-    zid: values.zid || '',
-    updatedAt: formatWebhookDate(row?.updatedAt || Date.now())
+    status: getWebhookStatusText(row?.status || 'pending'), // trạng thái hiển thị trên bảng: Chờ gửi|Đang theo dõi|Hoàn tất|Lỗi
+    name: stripZaloTags(values.name || values.display_name || ''), // Tên người nhận trên Zalo
+    tag: values.tag || '', // Phân loại/Thẻ gắn trên Zalo (VD: Khách hàng, Công việc)
+    phone: values.phone || values.sys_phone || '', // Số điện thoại (nếu có)
+    media_id: values.media_id || '', // ID hoặc đường dẫn hình ảnh đã gửi
+    message: values.message || '', // Nội dung tin nhắn gửi đi
+    replies: Array.isArray(row?.replies) ? row.replies.join('\n') : (values.replies || ''), // Các tin nhắn phản hồi của người nhận
+    send_at: formatWebhookDate(values.send_at), // Thời gian hẹn gửi tin / nhắc hẹn (YYYY-MM-DD HH:mm)
+    wait_reply: String(values.wait_reply || '').trim().toLowerCase() === 'x', // true/false - có chờ phản hồi hay không
+    error: row?.error || '', // Nội dung lỗi (nếu có)
+    zid: values.zid || '', // ID nội bộ của cuộc trò chuyện Zalo
+    updatedAt: formatWebhookDate(row?.updatedAt || Date.now()), // Thời gian cập nhật lần cuối
+    note: values.note || '' // Ghi chú thêm (VD: reminder, nhắc hẹn...)
   };
 }
 

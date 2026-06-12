@@ -149,6 +149,7 @@ function showUndoToast(message, onUndo, onCommit) {
  * @param {ClipboardEvent} e - Sự kiện paste
  */
 async function handleComposerPaste(e) {
+  if (document.getElementById("composerReminder")?.checked) return;
   const items = e.clipboardData?.items;
   if (!items) return;
 

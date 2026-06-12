@@ -24,7 +24,7 @@ let editingCell = null;
 let composerAttachedImage = null; // { name: string, base64: string, mediaId: string|null }
 
 // ĐỊNH NGHĨA HEADERS CHO IMPORT/EXPORT TEMPLATE
-const TEMPLATE_HEADERS = ['name', 'phone', 'send_at', 'wait_reply', 'message', 'zid'];
+const TEMPLATE_HEADERS = ['name', 'phone', 'send_at', 'note', 'wait_reply', 'message', 'zid'];
 const HIDDEN_TABLE_HEADERS = ['sys_phone'];
 const REPLY_COLLECTION_LIMIT_KEY = 'replyCollectionLimit';
 
@@ -33,6 +33,7 @@ const TEMPLATE_NOTE_ROW = {
   zid: 'Không bắt buộc nếu có name hoặc phone. Nếu biết zid thì nhập để gửi trực tiếp và lưu mapping.',
   phone: 'Không bắt buộc. Chấp nhận 987654321, 0987654321, 84987654321 hoặc +84987654321; phone_normalized lưu dạng 987654321.',
   send_at: 'Không bắt buộc. Thời gian hẹn gửi, ví dụ 2026-06-02 14:30. Bỏ trống thì gửi ngay.',
+  note: 'Không bắt buộc. Nhập reminder nếu muốn tạo nhắc hẹn Zalo thay vì gửi tin nhắn.',
   wait_reply: 'Không bắt buộc. Nhập x nếu cần chờ và lấy phản hồi sau khi gửi.',
   message: 'Bắt buộc. Nội dung tin nhắn cần gửi.'
 };
