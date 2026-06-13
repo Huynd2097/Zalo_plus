@@ -686,7 +686,7 @@ async function pollQueueReplies(tabId) {
   try {
     const sentMessage = String(row.values.message || '').trim();
     const replyLimit = await getReplyCollectionLimit();
-    const incoming = await withZaloActionLock(() => readIncomingMessages(tabId, sentMessage, replyLimit));
+    const incoming = await withZaloActionLock(() => readIncomingMessages(tabId, sentMessage, row.values?.sent_qid || "", replyLimit));
     const hasNewReplies = mergeReplies(row, incoming, replyLimit);
     
     const updatedRow = await updateQueueRow(row.id, {
@@ -764,7 +764,7 @@ async function updateCurrentWaitFromActiveChat(tabId, current) {
   try {
     const sentMessage = String(row.values.message || '').trim();
     const replyLimit = await getReplyCollectionLimit();
-    const incoming = await readIncomingMessages(tabId, sentMessage, replyLimit);
+    const incoming = await readIncomingMessages(tabId, sentMessage, row.values?.sent_qid || "", replyLimit);
     const hasNewReplies = mergeReplies(row, incoming, replyLimit);
     
     const updatedRow = await updateQueueRow(row.id, {
