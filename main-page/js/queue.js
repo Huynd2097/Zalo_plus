@@ -19,7 +19,8 @@ function getFilteredQueueRows() {
     const errStr = String(row.error || '').toLowerCase();
     const matchesSearch = valuesStr.includes(query) || statusStr.includes(query) || repliesStr.includes(query) || errStr.includes(query);
 
-    const matchesStatus = queueStatusFilter === "" || row.status === queueStatusFilter;
+    const matchesStatus = queueStatusFilter === "" || 
+      (queueStatusFilter === "replied" ? (row.replies && row.replies.length > 0) : row.status === queueStatusFilter);
     const matchesTag = queueTagFilter === "" || row.values?.tag === queueTagFilter;
     return matchesSearch && matchesStatus && matchesTag;
   });
@@ -457,6 +458,7 @@ function renderQueueTable() {
   // Lưu vị trí scroll trước khi re-render để tránh nhảy lên đầu
   const scrollParent = tableContainer?.closest('.overflow-y-auto, .overflow-auto') || tableContainer?.parentElement;
   const savedScrollTop = scrollParent?.scrollTop || 0;
+  const savedWindowScrollY = window.scrollY;
 
   const filtered = getFilteredQueueRows();
 
@@ -485,7 +487,7 @@ function renderQueueTable() {
 
   const visibleHeaders = ['media_id', 'message', 'replies', 'send_at', 'note', 'wait_reply', 'error', 'zid'];
 
-  tbody.innerHTML = filtered.map(row => {
+  tbody.innerHTML = filtered.map((row, index) => {
     const isChecked = selectedQueueIds.has(row.id);
     const rowId = row.id;
     const stateValue = row.status || 'pending';
@@ -593,6 +595,7 @@ function renderQueueTable() {
             >
           </label>
         </td>
+        <td class="px-2 py-1.5 text-center font-bold text-slate-400 select-none">${index + 1}</td>
         ${stateBadgeHtml}
         ${renderQueueRecipientCell(row, tagColor)}
         ${cells.join('')}
@@ -636,6 +639,9 @@ function renderQueueTable() {
   // Phục hồi vị trí scroll sau khi re-render để tránh nhảy lên đầu
   if (scrollParent && savedScrollTop > 0) {
     scrollParent.scrollTop = savedScrollTop;
+  }
+  if (savedWindowScrollY > 0) {
+    window.scrollTo(0, savedWindowScrollY);
   }
 }
 

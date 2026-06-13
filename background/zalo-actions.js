@@ -76,12 +76,26 @@ async function typeAndSendCurrentChat(tabId, message) {
 
   await clickPoint(tabId, sendPoint);
   await sleep(800);
+
+  const sentQid = await evaluateValue(tabId, `(() => {
+    const nodes = [...document.querySelectorAll('.message-view [class*="chat-message"], .message-view [data-id], .message-view [class*="msg-item"], .message-view .message-frame')];
+    const meNodes = nodes.filter(el => {
+      const cls = (el.className || '').toLowerCase();
+      return /\\b(me|mine|self|owner|sent|right)\\b/.test(cls);
+    });
+    const last = meNodes[meNodes.length - 1];
+    if (last) {
+       return last.getAttribute('data-qid') || last.querySelector('[data-qid]')?.getAttribute('data-qid') || '';
+    }
+    return '';
+  })()`);
+  return sentQid;
 }
 
 async function typeAndSendZalo(tabId, message) {
   await attachDebugger(tabId);
   try {
-    await typeAndSendCurrentChat(tabId, message);
+    return await typeAndSendCurrentChat(tabId, message);
   } finally {
     await detachDebugger(tabId);
   }
@@ -257,6 +271,20 @@ async function pasteAndSendImageZalo(tabId, base64Data) {
 
     await clickPoint(tabId, sendPoint);
     await sleep(800);
+
+    const sentQid = await evaluateValue(tabId, `(() => {
+      const nodes = [...document.querySelectorAll('.message-view [class*="chat-message"], .message-view [data-id], .message-view [class*="msg-item"], .message-view .message-frame')];
+      const meNodes = nodes.filter(el => {
+        const cls = (el.className || '').toLowerCase();
+        return /\\b(me|mine|self|owner|sent|right)\\b/.test(cls);
+      });
+      const last = meNodes[meNodes.length - 1];
+      if (last) {
+         return last.getAttribute('data-qid') || last.querySelector('[data-qid]')?.getAttribute('data-qid') || '';
+      }
+      return '';
+    })()`);
+    return sentQid;
   } finally {
     await detachDebugger(tabId);
   }

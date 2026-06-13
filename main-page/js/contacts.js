@@ -258,7 +258,7 @@ function renderContactsDatabaseTable() {
   if (filtered.length === 0) {
     tbody.innerHTML = `
       <tr>
-        <td colspan="8" class="text-center py-10 text-slate-400">
+        <td colspan="9" class="text-center py-10 text-slate-400">
           Không có dữ liệu danh bạ phù hợp
         </td>
       </tr>
@@ -266,13 +266,14 @@ function renderContactsDatabaseTable() {
     return;
   }
 
-  tbody.innerHTML = filtered.map(c => {
+  tbody.innerHTML = filtered.map((c, index) => {
     const hexColor = getCanonicalTagColor(c.tag, c.tag_color || "#4f46e5");
     const tagText = String(c.tag || '').trim();
     const salutationEmoji = getSalutationEmoji(c);
     const salutationText = c['_a/c'] || 'bạn';
     return `
       <tr class="hover:bg-slate-50/70 transition-colors text-xs" data-phone="${escapeHtml(c.phone || c.sys_phone || '')}" data-zid="${escapeHtml(c.zid || '')}">
+        <td class="px-2 py-2 text-center font-bold text-slate-400 select-none">${index + 1}</td>
         <td class="px-4 py-2 max-w-[260px]">
           <div class="flex items-center gap-2">
             <div class="rounded-full border border-slate-200 flex-shrink-0 overflow-hidden bg-slate-50 flex items-center justify-center" style="width: 40px; height: 40px;">

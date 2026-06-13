@@ -15,22 +15,22 @@
     </div>
     <div class="flex flex-wrap items-center justify-end gap-2 w-full sm:w-auto">
       <div class="flex items-center gap-2 px-1">
-        <div class="flex items-center gap-1" title="Chờ gửi">
+        <div class="flex items-center gap-1 cursor-pointer hover:opacity-80 transition-opacity" title="Chờ gửi" id="statBtnPending">
           <i data-lucide="clock" class="w-5 h-5 text-slate-400"></i>
           <strong id="statsPending" class="text-sm text-slate-900 font-extrabold leading-none">0</strong>
         </div>
         <div class="h-4 w-px bg-slate-200"></div>
-        <div class="flex items-center gap-1" title="Đang theo dõi">
+        <div class="flex items-center gap-1 cursor-pointer hover:opacity-80 transition-opacity" title="Đang theo dõi" id="statBtnWait">
           <i data-lucide="refresh-cw" class="w-5 h-5 text-cyan-500"></i>
           <strong id="statsWatching" class="text-sm text-slate-900 font-extrabold leading-none">0</strong>
         </div>
         <div class="h-4 w-px bg-slate-200"></div>
-        <div class="flex items-center gap-1" title="Hoàn tất">
+        <div class="flex items-center gap-1 cursor-pointer hover:opacity-80 transition-opacity" title="Hoàn tất" id="statBtnDone">
           <i data-lucide="check-circle-2" class="w-5 h-5 text-emerald-500"></i>
           <strong id="statsDone" class="text-sm text-slate-900 font-extrabold leading-none">0</strong>
         </div>
         <div class="h-4 w-px bg-slate-200"></div>
-        <div class="flex items-center gap-1" id="errorBoxBg" title="Lỗi gửi tin">
+        <div class="flex items-center gap-1 cursor-pointer hover:opacity-80 transition-opacity" id="errorBoxBg" title="Lỗi gửi tin">
           <i data-lucide="alert-circle" class="w-5 h-5 text-rose-500"></i>
           <strong id="statsErrors" class="text-sm text-slate-900 font-extrabold leading-none">0</strong>
         </div>
@@ -378,6 +378,10 @@
                 class="w-full text-left px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50 flex items-center gap-1.5">
                 <span class="w-1.5 h-1.5 rounded-full bg-cyan-400"></span> Đang theo dõi
               </button>
+              <button data-status-filter="replied"
+                class="w-full text-left px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50 flex items-center gap-1.5">
+                <span class="w-1.5 h-1.5 rounded-full bg-violet-400"></span> Có phản hồi
+              </button>
               <button data-status-filter="done"
                 class="w-full text-left px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50 flex items-center gap-1.5">
                 <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Hoàn tất
@@ -500,6 +504,7 @@
             <th class="w-10 px-3 py-2.5 select-none">
               <input type="checkbox" id="masterQueueCheckbox" class="w-3.5 h-3.5 rounded border-slate-300 accent-emerald-600 cursor-pointer">
             </th>
+            <th class="px-2 py-2.5 w-[40px] text-center">STT</th>
             <th class="px-2 py-2.5 w-[90px] whitespace-nowrap">Trạng thái</th>
             <th class="px-3 py-2.5 w-[320px]">Người nhận</th>
             <th class="px-3 py-2.5 w-[80px] text-center">Ảnh</th>

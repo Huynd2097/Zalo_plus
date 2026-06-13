@@ -258,6 +258,25 @@ async function initialize() {
     renderContactsDatabaseTable();
   });
 
+  
+  // Stats Click Filters
+  document.getElementById("statBtnPending")?.addEventListener("click", () => applyQueueFilter("pending", "Chờ gửi"));
+  document.getElementById("statBtnWait")?.addEventListener("click", () => applyQueueFilter("wait_reply", "Đang theo dõi"));
+  document.getElementById("statBtnDone")?.addEventListener("click", () => applyQueueFilter("done", "Hoàn tất"));
+  document.getElementById("errorBoxBg")?.addEventListener("click", () => applyQueueFilter("error", "Lỗi"));
+  
+  function applyQueueFilter(status, labelName) {
+    if (queueStatusFilter === status) {
+      queueStatusFilter = "";
+      labelName = "Tất cả trạng thái";
+    } else {
+      queueStatusFilter = status;
+    }
+    const label = document.getElementById("queueStatusFilterLabel");
+    if (label) label.innerText = labelName;
+    updateUI();
+  }
+
   document.getElementById("queueStatusFilterBtn")?.addEventListener("click", () => {
     document.getElementById("queueStatusFilterDropdown")?.classList.toggle("hidden");
   });

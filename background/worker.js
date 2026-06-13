@@ -305,7 +305,7 @@ async function getReplyCollectionLimit() {
   return Math.floor(raw);
 }
 
-async function readIncomingMessages(tabId, sentMessage, replyLimit = DEFAULT_REPLY_COLLECTION_LIMIT) {
+async function readIncomingMessages(tabId, sentMessage, sentQidParam = "", replyLimit = DEFAULT_REPLY_COLLECTION_LIMIT) {
   const maxReplies = Math.max(0, Math.floor(Number(replyLimit) || 0));
   const result = await evaluateValue(tabId, `(() => {
     const normalize = (text) => (text || '').replace(/\\u00a0/g, ' ').replace(/\\s+/g, ' ').trim();
@@ -366,7 +366,14 @@ async function readIncomingMessages(tabId, sentMessage, replyLimit = DEFAULT_REP
     });
 
     let startIndex = 0;
-    if (sentMsg) {
+    if (sentQidParam) {
+       for (let i = messages.length - 1; i >= 0; i--) {
+          if (messages[i].qid === sentQidParam) {
+             startIndex = i + 1;
+             break;
+          }
+       }
+    } else if (sentMsg) {
        const sentNorm = normalize(sentMsg);
        for (let i = messages.length - 1; i >= 0; i--) {
           if (messages[i].isMine && (messages[i].text === sentNorm || messages[i].text.includes(sentNorm) || sentNorm.includes(messages[i].text))) {
@@ -549,8 +556,9 @@ async function sendQueueRow(tabId, row) {
     return;
   }
 
+  let sentQid = '';
   if (message) {
-    await typeAndSendCurrentChat(tabId, message);
+    sentQid = await typeAndSendCurrentChat(tabId, message);
   }
 
   if (mediaId) {
@@ -559,7 +567,7 @@ async function sendQueueRow(tabId, row) {
     const mediaObj = mediaStore[mediaId];
     const base64Data = typeof mediaObj === 'string' ? mediaObj : mediaObj?.base64;
     if (base64Data) {
-      await pasteAndSendImageZalo(tabId, base64Data);
+      sentQid = await pasteAndSendImageZalo(tabId, base64Data);
     }
   }
   if (opened.foundByPhone && !String(row.values.zid || '').trim()) {
@@ -584,6 +592,7 @@ async function sendQueueRow(tabId, row) {
   }
 
   const shouldWait = String(row.values.wait_reply || '').trim().toLowerCase() === 'x';
+  if (sentQid) row.values.sent_qid = sentQid;
   const updatedRow = await updateQueueRow(row.id, {
     values: row.values,
     status: shouldWait ? 'wait_reply' : 'done',
