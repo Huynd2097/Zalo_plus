@@ -26,35 +26,47 @@ function sendMessage(message) {
  * @param {string} [type="success"] - Loại thông báo: success | error | info
  */
 function showToast(message, type = "success") {
-  const toast = document.getElementById("toast");
-  const toastMsg = document.getElementById("toastMessage");
-  const toastIcon = document.getElementById("toastIcon");
-
-  if (!toast || !toastMsg || !toastIcon) return;
-
-  toastMsg.innerText = message;
-
-  if (type === "success") {
-    toastIcon.className = "p-1 rounded-full bg-emerald-500 text-white flex items-center justify-center flex-shrink-0";
-    toastIcon.innerHTML = `<i data-lucide="check" class="w-3.5 h-3.5 stroke-[4]"></i>`;
-  } else if (type === "error") {
-    toastIcon.className = "p-1 rounded-full bg-rose-500 text-white flex items-center justify-center flex-shrink-0";
-    toastIcon.innerHTML = `<i data-lucide="alert-circle" class="w-3.5 h-3.5"></i>`;
-  } else {
-    toastIcon.className = "p-1 rounded-full bg-indigo-500 text-white flex items-center justify-center flex-shrink-0";
-    toastIcon.innerHTML = `<i data-lucide="info" class="w-3.5 h-3.5"></i>`;
+  let container = document.getElementById("toastContainer");
+  if (!container) {
+    container = document.createElement("div");
+    container.id = "toastContainer";
+    container.className = "fixed bottom-4 right-4 flex flex-col gap-2 z-[9999] pointer-events-none items-end";
+    document.body.appendChild(container);
   }
+
+  const toast = document.createElement("div");
+  toast.className = "bg-slate-900 text-white px-3.5 py-2 rounded-xl shadow-xl flex items-center gap-2 transform translate-y-8 opacity-0 transition-all duration-200 pointer-events-auto";
+
+  let iconHtml = '';
+  if (type === "success") {
+    iconHtml = '<span class="p-1 rounded-full bg-emerald-500 text-white flex items-center justify-center flex-shrink-0"><i data-lucide="check" class="w-3.5 h-3.5 stroke-[4]"></i></span>';
+  } else if (type === "error") {
+    iconHtml = '<span class="p-1 rounded-full bg-rose-500 text-white flex items-center justify-center flex-shrink-0"><i data-lucide="alert-circle" class="w-3.5 h-3.5"></i></span>';
+  } else {
+    iconHtml = '<span class="p-1 rounded-full bg-indigo-500 text-white flex items-center justify-center flex-shrink-0"><i data-lucide="info" class="w-3.5 h-3.5"></i></span>';
+  }
+
+  const msgSpan = document.createElement("span");
+  msgSpan.className = "text-xs font-semibold";
+  msgSpan.innerText = message;
+
+  toast.innerHTML = iconHtml;
+  toast.appendChild(msgSpan);
+  container.appendChild(toast);
 
   if (window.lucide) {
-    window.lucide.createIcons();
+    window.lucide.createIcons({ root: toast });
   }
 
-  toast.classList.remove("translate-y-24", "opacity-0", "pointer-events-none");
-  toast.classList.add("translate-y-0", "opacity-100");
+  requestAnimationFrame(() => {
+    toast.classList.remove("translate-y-8", "opacity-0");
+    toast.classList.add("translate-y-0", "opacity-100");
+  });
 
   setTimeout(() => {
-    toast.classList.add("translate-y-24", "opacity-0", "pointer-events-none");
     toast.classList.remove("translate-y-0", "opacity-100");
+    toast.classList.add("translate-y-8", "opacity-0");
+    toast.addEventListener('transitionend', () => toast.remove());
   }, 3000);
 }
 

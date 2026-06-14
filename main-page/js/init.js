@@ -177,7 +177,7 @@ async function initialize() {
   document.getElementById("btnImportPhoneNumbers")?.addEventListener("click", () => {
     const textarea = document.getElementById("manualPhoneInput");
     if (!textarea) return;
-    const lines = textarea.value.split('\n').map(l => l.trim()).filter(Boolean);
+    const lines = textarea.value.split(/[\n,;]+/).map(l => l.trim()).filter(Boolean);
     if (lines.length === 0) {
       showToast("Vui lòng nhập ít nhất một số điện thoại", "error");
       return;
@@ -185,25 +185,25 @@ async function initialize() {
     const notFoundPhones = [];
     let addedCount = 0;
 
-    const normalizeToSysPhone = (p) => {
-      let clean = (p || '').replace(/[^0-9]/g, '');
-      if (clean.startsWith('0')) {
-        return '84' + clean.slice(1);
-      }
+    const getCorePhone = (p) => {
+      let clean = String(p || '').replace(/[^0-9]/g, '');
+      if (clean.startsWith('84') && clean.length >= 11) return clean.slice(2);
+      if (clean.startsWith('0')) return clean.slice(1);
       return clean;
     };
 
     lines.forEach(line => {
-      const targetPhone = normalizeToSysPhone(line);
+      const targetPhone = getCorePhone(line);
       if (!targetPhone) {
         notFoundPhones.push(line);
         return;
       }
 
       const contact = latestContacts.find(c => {
-         const cp1 = normalizeToSysPhone(c.phone);
-         const cp2 = normalizeToSysPhone(c.sys_phone);
-         return cp1 === targetPhone || cp2 === targetPhone || c.sys_phone === targetPhone || c.phone === targetPhone;
+         const cp1 = getCorePhone(c.phone);
+         const cp2 = getCorePhone(c.sys_phone);
+         // Compare core phones, or fallback to exact string match just in case
+         return cp1 === targetPhone || cp2 === targetPhone || c.sys_phone === line || c.phone === line;
       });
 
       if (contact) {
