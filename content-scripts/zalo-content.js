@@ -575,9 +575,11 @@ function updateBatchOverlay() {
   const currentWaitReply = findCurrentWaitReplyRow(queue, current);
   const upcoming = findUpcomingSendRow(queue, current);
   
-  const hasCurrentWait = state?.running && state?.phase === 'polling' && state?.currentWait;
+  const isSendingActive = state?.running && state?.phase === 'sending' && state?.currentRowId;
+  const sendingRow = isSendingActive && queue?.byId?.[state.currentRowId] ? queue.byId[state.currentRowId] : null;
+  const isSendingCurrent = sendingRow && matchesCurrentRow(sendingRow, current);
 
-  if (!currentWaitReply && !upcoming && !hasCurrentWait) {
+  if (!currentWaitReply && !upcoming && !isSendingCurrent) {
     const box = document.getElementById(BATCH_OVERLAY_ID);
     if (box) box.style.display = 'none';
     stopBatchOverlayCountdown();
@@ -615,11 +617,16 @@ function updateBatchOverlay() {
   }
   
   stopBatchOverlayCountdown();
-  title.textContent = 'Gửi tin nhắn';
+  title.textContent = 'Đang gửi tin';
   btn.textContent = 'Bỏ qua người này';
-  const name = state.currentWait.display_name || state.currentWait.zid || '';
-  st.textContent = name || '...';
-  box.dataset.rowId = state.currentWait.rowId;
+  
+  if (sendingRow) {
+    const name = sendingRow.values?.display_name || sendingRow.values?.name || sendingRow.values?.zid || '';
+    st.textContent = name || '...';
+    box.dataset.rowId = sendingRow.id;
+  } else {
+    st.textContent = '...';
+  }
 }
 
 chrome.storage.onChanged.addListener((changes, area) => {
