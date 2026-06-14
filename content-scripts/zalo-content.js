@@ -130,7 +130,9 @@ function ensureOverlay() {
   box.style.zIndex = '2147483647';
   box.style.width = '156px';
   box.style.padding = '7px 8px 7px';
-  box.style.background = 'linear-gradient(180deg, rgba(18,24,36,0.96) 0%, rgba(28,36,52,0.96) 100%)';
+  box.style.background = 'linear-gradient(180deg, rgba(18,24,36,0.25) 0%, rgba(28,36,52,0.25) 100%)';
+  box.style.backdropFilter = 'blur(2px)';
+  box.style.WebkitBackdropFilter = 'blur(2px)';
   box.style.color = '#e5edf7';
   box.style.border = '1px solid rgba(139, 164, 202, 0.28)';
   box.style.borderRadius = '10px';
@@ -333,7 +335,9 @@ function ensureBatchOverlay() {
   box.style.zIndex = '2147483647';
   box.style.width = '170px';
   box.style.padding = '8px 10px';
-  box.style.background = 'linear-gradient(180deg, rgba(20,83,45,0.96) 0%, rgba(22,101,52,0.96) 100%)';
+  box.style.background = 'linear-gradient(180deg, rgba(20,83,45,0.25) 0%, rgba(22,101,52,0.25) 100%)';
+  box.style.backdropFilter = 'blur(2px)';
+  box.style.WebkitBackdropFilter = 'blur(2px)';
   box.style.color = '#fff';
   box.style.border = '1px solid rgba(134, 239, 172, 0.4)';
   box.style.borderRadius = '10px';
@@ -589,6 +593,7 @@ function updateBatchOverlay() {
   if (cd) cd.style.display = 'none';
   
   if (currentWaitReply) {
+    box.style.background = 'linear-gradient(180deg, rgba(14,165,233,0.25) 0%, rgba(2,132,199,0.25) 100%)';
     stopBatchOverlayCountdown();
     const name = currentWaitReply.values?.display_name || currentWaitReply.values?.name || currentWaitReply.values?.zid || '';
     title.textContent = 'Đang chờ phản hồi';
@@ -598,6 +603,8 @@ function updateBatchOverlay() {
     return;
   }
 
+  box.style.background = 'linear-gradient(180deg, rgba(20,83,45,0.25) 0%, rgba(22,101,52,0.25) 100%)';
+  
   if (upcoming) {
     const sendAt = parseSendAt(upcoming.values?.send_at);
     title.textContent = 'Tin chờ gửi';
