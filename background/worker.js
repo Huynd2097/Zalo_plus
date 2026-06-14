@@ -438,9 +438,17 @@ async function resolveRowZid(tabId, row) {
  */
 function getRowSearchPhone(values) {
   fillIntermediatePhoneColumns(values);
-  return normalizePhone(values.phone) ||
-    normalizePhone(values.sys_phone) ||
-    normalizePhone(values._name_phone_normalized);
+  // KHÔNG DÙNG sys_phone Ở ĐÂY VÌ sys_phone BỊ MẤT SỐ 0 Ở ĐẦU (84... HOẶC 9 SỐ)
+  // ZALO SEARCH BẰNG SĐT ĐẦY ĐỦ CÓ SỐ 0 Ở ĐẦU (VD: 0387654321) MỚI CHUẨN NHẤT
+  // VÌ VẬY CHỈ LẤY GỐC TỪ phone HOẶC _name_phone_normalized RỒI CHUẨN HOÁ XUỐNG DƯỚI
+  const raw = normalizePhone(values.phone) || normalizePhone(values._name_phone_normalized);
+  if (!raw) return '';
+  
+  const compact = raw.replace(/[^\d+]/g, '');
+  if (compact.startsWith('+84')) return `0${compact.slice(3)}`;
+  if (compact.startsWith('84') && compact.length >= 11) return `0${compact.slice(2)}`;
+  if (/^[1-9]\d{8,9}$/.test(compact)) return `0${compact}`;
+  return compact;
 }
 
 /**
@@ -875,15 +883,8 @@ async function runWorkerLoop(tabId) {
             await sleep(normalDelay);
           }
         } catch (err) {
-          if (isSearchNotFoundError(err)) {
-            // Lỗi không tìm thấy người nhận là lỗi tạm thời
-            retryAfterRoundIds.add(nextPending.id);
-            await updateQueueRow(nextPending.id, { status: 'pending', error: '' });
-            await saveWorkerState({ message: `Chưa tìm thấy người nhận, sẽ thử lại sau khi đi hết hàng chờ.` });
-          } else {
-            // Các lỗi khác ghi nhận lỗi thực tế
-            await updateQueueRow(nextPending.id, { status: 'error', error: err?.message || String(err) });
-          }
+          // Ghi nhận lỗi thực tế và chuyển sang dòng tiếp theo (không kẹt lại ở dòng này)
+          await updateQueueRow(nextPending.id, { status: 'error', error: err?.message || String(err) });
         }
         continue;
       }
