@@ -395,9 +395,11 @@ async function readIncomingMessages(tabId, sentMessage, sentQidParam = "", reply
     }
 
     const items = [];
-    for (let i = startIndex; i < messages.length; i++) {
-       if (!messages[i].isMine) {
-          items.push(messages[i].text);
+    if (typeof startIndex === 'number' && startIndex >= 0 && Array.isArray(messages)) {
+       for (let i = startIndex; i < messages.length; i++) {
+          if (messages[i] && !messages[i].isMine) {
+             items.push(messages[i].text);
+          }
        }
     }
 
@@ -577,17 +579,17 @@ async function sendQueueRow(tabId, row) {
   }
 
   let sentQid = '';
-  if (message) {
+  if (message && !mediaId) {
     sentQid = await typeAndSendCurrentChat(tabId, message);
-  }
-
-  if (mediaId) {
+  } else if (mediaId) {
     const data = await storageGet(['mediaStore']);
     const mediaStore = data.mediaStore || {};
     const mediaObj = mediaStore[mediaId];
     const base64Data = typeof mediaObj === 'string' ? mediaObj : mediaObj?.base64;
     if (base64Data) {
-      sentQid = await pasteAndSendImageZalo(tabId, base64Data);
+      sentQid = await pasteImageAndTypeAndSend(tabId, base64Data, message);
+    } else if (message) {
+      sentQid = await typeAndSendCurrentChat(tabId, message);
     }
   }
   if (opened.foundByPhone && !String(row.values.zid || '').trim()) {

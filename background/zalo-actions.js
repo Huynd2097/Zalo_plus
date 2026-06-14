@@ -290,6 +290,81 @@ async function pasteAndSendImageZalo(tabId, base64Data) {
   }
 }
 
+async function pasteImageAndTypeAndSend(tabId, base64Data, message) {
+  await attachDebugger(tabId);
+  try {
+    let res = await sendToTab(tabId, { type: 'ZALO_PASTE_IMAGE', base64Data });
+    if (!res?.ok && /receiving end does not exist|no response/i.test(String(res?.error || ''))) {
+      const injected = await scriptingExecuteScript({
+        target: { tabId },
+        func: (imageBase64) => {
+          try {
+            const raw = String(imageBase64 || '').includes(',')
+              ? String(imageBase64 || '').split(',')[1]
+              : String(imageBase64 || '');
+            const binary = atob(raw);
+            const bytes = new Uint8Array(binary.length);
+            for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+            const file = new File([new Blob([bytes], { type: 'image/png' })], 'auto_pasted_image.png', { type: 'image/png' });
+            const dataTransfer = new DataTransfer();
+            dataTransfer.items.add(file);
+            const targetInput = document.querySelector('#richInput') || document.activeElement;
+            if (!targetInput || targetInput === document.body) {
+              return { ok: false, error: 'Chua focus vao o nhap tin nhan Zalo.' };
+            }
+            targetInput.focus();
+            targetInput.dispatchEvent(new ClipboardEvent('paste', {
+              clipboardData: dataTransfer,
+              bubbles: true,
+              cancelable: true
+            }));
+            return { ok: true };
+          } catch (err) {
+            return { ok: false, error: err?.message || String(err) };
+          }
+        },
+        args: [base64Data]
+      });
+      res = injected?.[0]?.result || res;
+    }
+    if (!res?.ok) throw new Error(res?.error || 'Không thể dán ảnh vào Zalo.');
+
+    await sleep(1500); // Đợi Zalo nhận diện hình ảnh vừa dán
+
+    if (message) {
+      await insertText(tabId, message);
+      await sleep(1000);
+    }
+
+    const sendPoint = await evaluateValue(tabId, `(() => {
+      const btn = document.querySelector('.send-msg-btn') || document.querySelector('[data-translate-title="STR_SEND"]');
+      if (!btn) return null;
+      const r = btn.getBoundingClientRect();
+      return r.width && r.height ? { x: r.x + r.width / 2, y: r.y + r.height / 2 } : null;
+    })()`);
+    if (!sendPoint) throw new Error('Không tìm thấy nút gửi Zalo sau khi dán ảnh/nhập chữ.');
+
+    await clickPoint(tabId, sendPoint);
+    await sleep(800);
+
+    const sentQid = await evaluateValue(tabId, `(() => {
+      const nodes = [...document.querySelectorAll('.message-view [class*="chat-message"], .message-view [data-id], .message-view [class*="msg-item"], .message-view .message-frame')];
+      const meNodes = nodes.filter(el => {
+        const cls = (el.className || '').toLowerCase();
+        return /\\b(me|mine|self|owner|sent|right)\\b/.test(cls);
+      });
+      const last = meNodes[meNodes.length - 1];
+      if (last) {
+         return last.getAttribute('data-qid') || last.querySelector('[data-qid]')?.getAttribute('data-qid') || '';
+      }
+      return '';
+    })()`);
+    return sentQid;
+  } finally {
+    await detachDebugger(tabId);
+  }
+}
+
 async function findExactVisibleTextPoint(tabId, text, minX = 0) {
   return evaluateValue(tabId, `(() => {
     const target = ${JSON.stringify(text)};
