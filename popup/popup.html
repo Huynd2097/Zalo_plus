@@ -134,7 +134,7 @@
     /* Stats Grid */
     .stats-grid {
       display: grid;
-      grid-template-cols: 1fr 1fr;
+      grid-template-columns: repeat(3, 1fr);
       gap: 8px;
     }
 
@@ -237,6 +237,10 @@
       </div>
       
       <div class="stats-grid">
+        <div class="stat-box">
+          <div class="stat-num" id="waitReplyCount">0</div>
+          <div class="stat-desc">Chờ phản hồi</div>
+        </div>
         <div class="stat-box">
           <div class="stat-num" id="pendingCount">0</div>
           <div class="stat-desc">Chờ gửi tin</div>

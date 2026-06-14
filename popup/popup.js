@@ -8,6 +8,7 @@ const openDashboardBtn = document.getElementById('openDashboardBtn');
 const syncNowLink = document.getElementById('syncNowLink');
 const workerStatusText = document.getElementById('statusText');
 const statusDot = document.getElementById('statusDot');
+const waitReplyCountEl = document.getElementById('waitReplyCount');
 const pendingCountEl = document.getElementById('pendingCount');
 const contactsCountEl = document.getElementById('contactsCount');
 
@@ -38,10 +39,13 @@ async function loadStatus() {
       const state = queueResp.state;
       const queue = queueResp.queue;
 
-      // Đếm số dòng pending
+      // Đếm số dòng pending và wait_reply
       const rows = Object.values(queue.byId || {});
       const pendingCount = rows.filter((row) => ['pending', 'sending'].includes(row.status)).length;
+      const waitReplyCount = rows.filter((row) => row.status === 'wait_reply').length;
+      
       pendingCountEl.textContent = pendingCount;
+      if (waitReplyCountEl) waitReplyCountEl.textContent = waitReplyCount;
 
       // Trạng thái hoạt động
       if (state.running) {
