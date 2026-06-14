@@ -174,6 +174,63 @@ async function initialize() {
 
   document.getElementById("clearSelectedContactsBtn")?.addEventListener("click", clearAllSelectedContacts);
 
+  document.getElementById("btnImportPhoneNumbers")?.addEventListener("click", () => {
+    const textarea = document.getElementById("manualPhoneInput");
+    if (!textarea) return;
+    const lines = textarea.value.split('\n').map(l => l.trim()).filter(Boolean);
+    if (lines.length === 0) {
+      showToast("Vui lòng nhập ít nhất một số điện thoại", "error");
+      return;
+    }
+    const notFoundPhones = [];
+    let addedCount = 0;
+
+    const normalizeToSysPhone = (p) => {
+      let clean = (p || '').replace(/[^0-9]/g, '');
+      if (clean.startsWith('0')) {
+        return '84' + clean.slice(1);
+      }
+      return clean;
+    };
+
+    lines.forEach(line => {
+      const targetPhone = normalizeToSysPhone(line);
+      if (!targetPhone) {
+        notFoundPhones.push(line);
+        return;
+      }
+
+      const contact = latestContacts.find(c => {
+         const cp1 = normalizeToSysPhone(c.phone);
+         const cp2 = normalizeToSysPhone(c.sys_phone);
+         return cp1 === targetPhone || cp2 === targetPhone || c.sys_phone === targetPhone || c.phone === targetPhone;
+      });
+
+      if (contact) {
+        const key = contact.phone || contact.sys_phone || contact.zid || contact.display_name;
+        if (key && !selectedDirectoryIds.has(key)) {
+          selectedDirectoryIds.add(key);
+          addedCount++;
+        }
+      } else {
+        notFoundPhones.push(line);
+      }
+    });
+
+    if (notFoundPhones.length > 0) {
+      textarea.value = notFoundPhones.join('\n');
+      showToast(`Có ${notFoundPhones.length} số điện thoại không có trong danh bạ.`, "error");
+    } else {
+      textarea.value = "";
+    }
+    
+    if (addedCount > 0) {
+      showToast(`Đã thêm ${addedCount} liên hệ vào danh sách nhận tin.`);
+    }
+    
+    updateUI();
+  });
+
   // Soạn thảo và bộ đếm ký tự
   document.getElementById("composerMessage")?.addEventListener("input", (e) => {
     const len = e.target.value.length;
