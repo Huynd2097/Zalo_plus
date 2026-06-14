@@ -37,7 +37,7 @@ function stopExtensionContextWork() {
 function sendRuntimeMessage(message, callback) {
   if (!isExtensionContextValid()) {
     stopExtensionContextWork();
-    callback?.({ ok: false, error: 'Extension context invalidated.' });
+    callback?.({ ok: false, error: 'Extension đã cập nhật bản mới. Vui lòng F5 (tải lại trang) để tiếp tục.' });
     return;
   }
   try {
@@ -45,14 +45,16 @@ function sendRuntimeMessage(message, callback) {
       const error = chrome.runtime.lastError;
       if (error) {
         if (error.message?.includes('Extension context invalidated')) stopExtensionContextWork();
-        callback?.({ ok: false, error: error.message });
+        const errMsg = error.message?.includes('Extension context invalidated') ? 'Extension đã cập nhật bản mới. Vui lòng F5 (tải lại trang) để tiếp tục.' : error.message;
+        callback?.({ ok: false, error: errMsg });
         return;
       }
       callback?.(resp);
     });
   } catch (err) {
     if (err?.message?.includes('Extension context invalidated')) stopExtensionContextWork();
-    callback?.({ ok: false, error: err?.message || 'Khong gui duoc message.' });
+    const errMsg = err?.message?.includes('Extension context invalidated') ? 'Extension đã cập nhật bản mới. Vui lòng F5 (tải lại trang) để tiếp tục.' : (err?.message || 'Không gửi được request.');
+    callback?.({ ok: false, error: errMsg });
   }
 }
 
@@ -346,7 +348,8 @@ function ensureBatchOverlay() {
       <span>Gửi tin nhắn</span>
       <span id="zz-batch-close" style="cursor:pointer;font-size:14px;padding:0 4px;" title="Tắt popup này">&times;</span>
     </div>
-    <div id="zz-batch-status" style="font-size:12px;font-weight:600;margin-bottom:8px;color:#fff;">Đang chờ...</div>
+    <div id="zz-batch-status" style="font-size:12px;font-weight:600;margin-bottom:4px;color:#fff;">Đang chờ...</div>
+    <div id="zz-batch-countdown" style="font-size:12px;font-weight:600;margin-bottom:8px;color:#fde047;display:none;"></div>
     <button id="zz-batch-skip-btn" style="width:100%;padding:6px;border:none;border-radius:6px;background:#eab308;color:#fff;font-weight:bold;cursor:pointer;font-size:11px;">Bỏ qua người này</button>
   `;
 
@@ -501,7 +504,8 @@ function findUpcomingSendRow(queue, current) {
     if (row.status !== 'pending' || row.error) return false;
     if (!matchesCurrentRow(row, current)) return false;
     const sendAt = parseSendAt(row.values?.send_at);
-    return sendAt && sendAt > now && sendAt <= maxAt;
+    // Bỏ điều kiện sendAt > now để khi quá giờ (sendAt <= now) mà chưa gửi thì vẫn hiện popup
+    return sendAt && sendAt <= maxAt;
   }) || null;
 }
 
@@ -516,11 +520,10 @@ function findCurrentWaitReplyRow(queue, current) {
 function formatRemainingTime(targetMs) {
   const remaining = Math.max(0, targetMs - Date.now());
   const totalSeconds = Math.ceil(remaining / 1000);
-  const hours = Math.floor(totalSeconds / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
   const pad = (value) => String(value).padStart(2, '0');
-  return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+  return `${pad(minutes)}:${pad(seconds)}`;
 }
 
 function stopBatchOverlayCountdown() {
@@ -532,19 +535,33 @@ function stopBatchOverlayCountdown() {
 
 function startBatchOverlayCountdown(box, sendAt) {
   const st = box.querySelector('#zz-batch-status');
+  const cd = box.querySelector('#zz-batch-countdown');
+  if (cd) cd.style.display = 'block';
+
   const render = () => {
-    if (!st || sendAt <= Date.now()) {
-      stopBatchOverlayCountdown();
-      updateBatchOverlay();
-      return;
-    }
+    if (!st) return;
     const sendDate = new Date(sendAt);
-    st.textContent = `Còn lại: ${formatRemainingTime(sendAt)} - gửi lúc ${sendDate.toLocaleTimeString('vi-VN')} ${sendDate.toLocaleDateString('vi-VN')}`;
+    const pad = (v) => String(v).padStart(2, '0');
+    const yyyy = sendDate.getFullYear();
+    const mm = pad(sendDate.getMonth() + 1);
+    const dd = pad(sendDate.getDate());
+    const hh = pad(sendDate.getHours());
+    const min = pad(sendDate.getMinutes());
+    st.textContent = `Gửi lúc: ${yyyy}-${mm}-${dd} ${hh}:${min}`;
+    
+    if (sendAt <= Date.now()) {
+      if (cd) cd.textContent = 'Đang chờ xử lý gửi...';
+      stopBatchOverlayCountdown();
+    } else {
+      if (cd) cd.textContent = `Còn lại: ${formatRemainingTime(sendAt)}`;
+    }
   };
 
   stopBatchOverlayCountdown();
   render();
-  batchOverlayCountdownTimer = setInterval(render, 1000);
+  if (sendAt > Date.now()) {
+    batchOverlayCountdownTimer = setInterval(render, 1000);
+  }
 }
 
 function updateBatchOverlay() {
@@ -568,12 +585,14 @@ function updateBatchOverlay() {
   const st = box.querySelector('#zz-batch-status');
   const title = box.querySelector('#zz-batch-title span');
   const btn = box.querySelector('#zz-batch-skip-btn');
+  const cd = box.querySelector('#zz-batch-countdown');
+  if (cd) cd.style.display = 'none';
   
   if (currentWaitReply) {
     stopBatchOverlayCountdown();
     const name = currentWaitReply.values?.display_name || currentWaitReply.values?.name || currentWaitReply.values?.zid || '';
     title.textContent = 'Đang chờ phản hồi';
-    st.textContent = name ? `Đang theo dõi phản hồi: ${name}` : 'Đang theo dõi phản hồi...';
+    st.textContent = name || '...';
     btn.textContent = 'Dừng người này';
     box.dataset.rowId = currentWaitReply.id;
     return;
@@ -592,7 +611,7 @@ function updateBatchOverlay() {
   title.textContent = 'Gửi tin nhắn';
   btn.textContent = 'Bỏ qua người này';
   const name = state.currentWait.display_name || state.currentWait.zid || '';
-  st.textContent = name ? `Đang theo dõi phản hồi: ${name}` : 'Đang theo dõi phản hồi...';
+  st.textContent = name || '...';
   box.dataset.rowId = state.currentWait.rowId;
 }
 

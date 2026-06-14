@@ -310,6 +310,7 @@ async function readIncomingMessages(tabId, sentMessage, sentQidParam = "", reply
   const result = await evaluateValue(tabId, `(() => {
     const normalize = (text) => (text || '').replace(/\\u00a0/g, ' ').replace(/\\s+/g, ' ').trim();
     const sentMsg = ${JSON.stringify(sentMessage || '')};
+    const sentQidParam = ${JSON.stringify(sentQidParam || '')};
 
     let nodes = [...document.querySelectorAll('.message-view [class*="chat-message"]')];
     if (!nodes.length) {
@@ -361,11 +362,13 @@ async function readIncomingMessages(tabId, sentMessage, sentQidParam = "", reply
       }
 
       if (text && !text.includes('Đã gửi') && !text.includes('Đã nhận')) {
-        messages.push({ text, isMine });
+        const qid = el.getAttribute('data-qid') || el.querySelector('[data-qid]')?.getAttribute('data-qid') || '';
+        messages.push({ text, isMine, qid });
       }
     });
 
-    let startIndex = 0;
+    let startIndex = -1;
+    let errorMsg = '';
     if (sentQidParam) {
        for (let i = messages.length - 1; i >= 0; i--) {
           if (messages[i].qid === sentQidParam) {
@@ -373,6 +376,7 @@ async function readIncomingMessages(tabId, sentMessage, sentQidParam = "", reply
              break;
           }
        }
+       if (startIndex === -1) errorMsg = 'Không tìm thấy qid gửi đi (' + sentQidParam + '). Có thể tin nhắn đã trôi khỏi màn hình.';
     } else if (sentMsg) {
        const sentNorm = normalize(sentMsg);
        for (let i = messages.length - 1; i >= 0; i--) {
@@ -381,6 +385,13 @@ async function readIncomingMessages(tabId, sentMessage, sentQidParam = "", reply
              break;
           }
        }
+       if (startIndex === -1) errorMsg = 'Không tìm thấy text tin nhắn gửi đi trong màn hình.';
+    } else {
+       startIndex = 0;
+    }
+
+    if (startIndex === -1) {
+       return { ok: false, error: errorMsg };
     }
 
     const items = [];
@@ -395,8 +406,9 @@ async function readIncomingMessages(tabId, sentMessage, sentQidParam = "", reply
   })()`);
 
   if (!result?.ok || !Array.isArray(result.items)) {
-    console.error('Không đọc được tin nhắn Zalo:', result);
-    throw new Error('Không đọc được tin nhắn Zalo.');
+    const errMsg = result?.error || 'Không đọc được tin nhắn Zalo.';
+    console.error('Lỗi đọc tin nhắn:', errMsg, result);
+    throw new Error(errMsg);
   }
   return result.items;
 }
@@ -710,7 +722,11 @@ async function pollQueueReplies(tabId) {
       await saveWorkerState({ currentWait: null });
     }
   } catch (err) {
-    await saveWorkerState({ message: err?.message || 'Lỗi kiểm tra phản hồi.' });
+    const errMsg = err?.message || 'Lỗi kiểm tra phản hồi.';
+    await saveWorkerState({ message: errMsg });
+    if (row && row.id) {
+      await updateQueueRow(row.id, { error: errMsg, status: 'error' });
+    }
   }
 }
 
@@ -788,7 +804,11 @@ async function updateCurrentWaitFromActiveChat(tabId, current) {
       await saveWorkerState({ currentWait: null });
     }
   } catch (err) {
-    await saveWorkerState({ message: err?.message || 'Lỗi khi cập nhật hội thoại.' });
+    const errMsg = err?.message || 'Lỗi khi cập nhật hội thoại.';
+    await saveWorkerState({ message: errMsg });
+    if (row && row.id) {
+      await updateQueueRow(row.id, { error: errMsg, status: 'error' });
+    }
   }
 
   return getQueueSummary();
