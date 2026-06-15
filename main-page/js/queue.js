@@ -281,11 +281,11 @@ function summarizeRepliesLocal() {
  */
 function orderHeaders(headers, options = {}) {
   const hidden = options.hidden || [];
-  const standardOrder = ['name', 'phone', 'message', 'replies', 'send_at', 'note', 'wait_reply', 'error', 'zid'];
+  const standardOrder = ['name', 'phone', 'message', 'replies', 'send_at', 'note', 'wait_reply', 'error', 'updatedAt', 'zid'];
   const next = [];
   
   standardOrder.forEach((header) => {
-    if (((headers || []).includes(header) || header === 'wait_reply' || header === 'zid' || header === 'replies' || header === 'error') && !hidden.includes(header)) {
+    if (((headers || []).includes(header) || header === 'wait_reply' || header === 'zid' || header === 'replies' || header === 'error' || header === 'updatedAt') && !hidden.includes(header)) {
       next.push(header);
     }
   });
@@ -324,6 +324,7 @@ function getQueueCellClass(header) {
     note: 'w-[70px] text-center',
     wait_reply: 'w-[60px] text-center',
     error: 'w-[150px] max-w-[150px] whitespace-pre-wrap break-words text-rose-600 leading-snug',
+    updatedAt: 'w-[120px] text-slate-500 leading-tight',
     zid: 'w-[160px] max-w-[160px] truncate font-mono text-slate-400'
   };
   return `${base} ${classes[header] || ''}`;
@@ -485,7 +486,7 @@ function renderQueueTable() {
     "error": "Lỗi"
   };
 
-  const visibleHeaders = ['media_id', 'message', 'replies', 'send_at', 'note', 'wait_reply', 'error', 'zid'];
+  const visibleHeaders = ['media_id', 'message', 'replies', 'send_at', 'note', 'wait_reply', 'error', 'updatedAt', 'zid'];
 
   tbody.innerHTML = filtered.map((row, index) => {
     const isChecked = selectedQueueIds.has(row.id);
@@ -504,6 +505,7 @@ function renderQueueTable() {
 
     const cells = visibleHeaders.map((header) => {
       let value = row.values?.[header] ?? '';
+      if (header === 'updatedAt') value = row.updatedAt || '';
       if (header === 'name') value = stripZaloTags(value || row.values?.display_name || '');
       if (header === 'display_name') value = stripZaloTags(value);
       if (header === 'phone') value = formatDisplayPhone(row.values?.phone || row.values?.sys_phone || '');
@@ -535,7 +537,7 @@ function renderQueueTable() {
         return `<td class="${getQueueCellClass(header)} text-slate-300 text-center">—</td>`;
       }
 
-      if (header === 'send_at') {
+      if (header === 'send_at' || header === 'updatedAt') {
         return `<td class="${getQueueCellClass(header)}">${formatTimeTwoLines(value)}</td>`;
       }
 
@@ -562,7 +564,7 @@ function renderQueueTable() {
         `;
       }
 
-      const editable = !['media_id', 'note', 'replies', 'error'].includes(header);
+      const editable = !['media_id', 'note', 'replies', 'error', 'updatedAt'].includes(header);
       
       if (header === 'message') {
         const divAttrs = `contenteditable="true" data-row-id="${rowId}" data-header="${escapeHtml(header)}" spellcheck="false" class="max-h-[110px] overflow-y-auto whitespace-pre-wrap break-words leading-snug w-full focus:outline-none focus:bg-white focus:ring-1 focus:ring-indigo-400 rounded transition-all"`;
