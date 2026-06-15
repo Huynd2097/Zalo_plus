@@ -325,6 +325,16 @@ function getQueueCellClass(header) {
     wait_reply: 'w-[60px] text-center',
     error: 'w-[150px] max-w-[150px] whitespace-pre-wrap break-words text-rose-600 leading-snug',
     updatedAt: 'w-[120px] text-slate-500 leading-tight',
+    sys_phone: `w-[120px] max-w-[120px] truncate font-mono text-slate-400 debug-td-sys_phone hidden`,
+    sent_qid: `w-[160px] max-w-[160px] truncate font-mono text-slate-400 debug-td-sent_qid hidden`,
+    reply_qids: `w-[160px] max-w-[160px] truncate font-mono text-slate-400 debug-td-reply_qids hidden`,
+    tag: `w-[120px] max-w-[120px] truncate text-slate-400 debug-td-tag hidden`,
+    tag_color: `w-[120px] max-w-[120px] truncate font-mono text-slate-400 debug-td-tag_color hidden`,
+    media_name: `w-[150px] max-w-[150px] truncate text-slate-400 debug-td-media_name hidden`,
+    media_thumbnail: `w-[150px] max-w-[150px] truncate font-mono text-slate-400 debug-td-media_thumbnail hidden`,
+    id: `w-[160px] max-w-[160px] truncate font-mono text-slate-400 debug-td-id hidden`,
+    sentAt: `w-[160px] max-w-[160px] truncate font-mono text-slate-400 debug-td-sentAt hidden`,
+    raw_error: `w-[300px] max-w-[300px] whitespace-pre-wrap break-words font-mono text-[10px] text-rose-500 debug-td-raw_error hidden`,
     zid: 'w-[160px] max-w-[160px] truncate font-mono text-slate-400'
   };
   return `${base} ${classes[header] || ''}`;
@@ -442,6 +452,7 @@ function setStatus(text, isError = false, options = {}) {
   if (!options.fromBatch && message) dismissedStatusText = '';
 
   if (message) {
+    if (options.fromBatch) dismissedStatusText = message;
     showToast(message, isError ? "error" : "info");
   }
 }
@@ -486,7 +497,19 @@ function renderQueueTable() {
     "error": "Lỗi"
   };
 
-  const visibleHeaders = ['media_id', 'message', 'replies', 'send_at', 'note', 'wait_reply', 'error', 'updatedAt', 'zid'];
+  const visibleHeaders = ['media_id', 'message', 'replies', 'send_at', 'note', 'wait_reply', 'error', 'updatedAt', 'id', 'sys_phone', 'sent_qid', 'reply_qids', 'tag', 'tag_color', 'media_name', 'media_thumbnail', 'sentAt', 'raw_error', 'zid'];
+
+  // Lấy trạng thái của các checkbox debug
+  const debugIdChecked = document.querySelector('.debug-col-toggle[value="id"]')?.checked;
+  const debugSysPhoneChecked = document.querySelector('.debug-col-toggle[value="sys_phone"]')?.checked;
+  const debugSentQidChecked = document.querySelector('.debug-col-toggle[value="sent_qid"]')?.checked;
+  const debugReplyQidsChecked = document.querySelector('.debug-col-toggle[value="reply_qids"]')?.checked;
+  const debugTagChecked = document.querySelector('.debug-col-toggle[value="tag"]')?.checked;
+  const debugTagColorChecked = document.querySelector('.debug-col-toggle[value="tag_color"]')?.checked;
+  const debugMediaNameChecked = document.querySelector('.debug-col-toggle[value="media_name"]')?.checked;
+  const debugMediaThumbnailChecked = document.querySelector('.debug-col-toggle[value="media_thumbnail"]')?.checked;
+  const debugSentAtChecked = document.querySelector('.debug-col-toggle[value="sentAt"]')?.checked;
+  const debugRawErrorChecked = document.querySelector('.debug-col-toggle[value="raw_error"]')?.checked;
 
   tbody.innerHTML = filtered.map((row, index) => {
     const isChecked = selectedQueueIds.has(row.id);
@@ -505,11 +528,18 @@ function renderQueueTable() {
 
     const cells = visibleHeaders.map((header) => {
       let value = row.values?.[header] ?? '';
+      if (header === 'id') value = row.id || '';
+      if (header === 'sentAt') {
+        const d = new Date(row.sentAt);
+        value = (row.sentAt && !isNaN(d.getTime())) ? d.toISOString() : '';
+      }
+      if (header === 'raw_error') value = row.error || '';
       if (header === 'updatedAt') value = row.updatedAt || '';
       if (header === 'name') value = stripZaloTags(value || row.values?.display_name || '');
       if (header === 'display_name') value = stripZaloTags(value);
       if (header === 'phone') value = formatDisplayPhone(row.values?.phone || row.values?.sys_phone || '');
       if (header === 'replies') value = (row.replies || []).join('\n');
+      if (header === 'reply_qids') value = (row.reply_qids || []).join(', ');
       if (header === 'error') value = row.error || '';
 
       if (header === 'media_id') {
@@ -538,7 +568,8 @@ function renderQueueTable() {
       }
 
       if (header === 'send_at' || header === 'updatedAt') {
-        return `<td class="${getQueueCellClass(header)}">${formatTimeTwoLines(value)}</td>`;
+        let cls = getQueueCellClass(header);
+        return `<td class="${cls}">${formatTimeTwoLines(value)}</td>`;
       }
 
       if (header === 'note') {
@@ -566,23 +597,35 @@ function renderQueueTable() {
 
       const editable = !['media_id', 'note', 'replies', 'error', 'updatedAt'].includes(header);
       
+      let finalCellClass = getQueueCellClass(header);
+      if (header === 'id' && debugIdChecked) finalCellClass = finalCellClass.replace('hidden', '').trim();
+      if (header === 'sys_phone' && debugSysPhoneChecked) finalCellClass = finalCellClass.replace('hidden', '').trim();
+      if (header === 'sent_qid' && debugSentQidChecked) finalCellClass = finalCellClass.replace('hidden', '').trim();
+      if (header === 'reply_qids' && debugReplyQidsChecked) finalCellClass = finalCellClass.replace('hidden', '').trim();
+      if (header === 'tag' && debugTagChecked) finalCellClass = finalCellClass.replace('hidden', '').trim();
+      if (header === 'tag_color' && debugTagColorChecked) finalCellClass = finalCellClass.replace('hidden', '').trim();
+      if (header === 'media_name' && debugMediaNameChecked) finalCellClass = finalCellClass.replace('hidden', '').trim();
+      if (header === 'media_thumbnail' && debugMediaThumbnailChecked) finalCellClass = finalCellClass.replace('hidden', '').trim();
+      if (header === 'sentAt' && debugSentAtChecked) finalCellClass = finalCellClass.replace('hidden', '').trim();
+      if (header === 'raw_error' && debugRawErrorChecked) finalCellClass = finalCellClass.replace('hidden', '').trim();
+
       if (header === 'message') {
         const divAttrs = `contenteditable="true" data-row-id="${rowId}" data-header="${escapeHtml(header)}" spellcheck="false" class="max-h-[110px] overflow-y-auto whitespace-pre-wrap break-words leading-snug w-full focus:outline-none focus:bg-white focus:ring-1 focus:ring-indigo-400 rounded transition-all"`;
-        return `<td class="${getQueueCellClass(header)}"><div ${divAttrs}>${escapeHtml(value)}</div></td>`;
+        return `<td class="${finalCellClass}"><div ${divAttrs}>${escapeHtml(value)}</div></td>`;
       }
       if (header === 'replies') {
         const replyLines = (row.replies || []);
         const replyHtml = replyLines.map(r => `<div>${escapeHtml(r)}</div>`).join('');
         const divClasses = "max-h-[110px] overflow-y-auto leading-snug text-indigo-700 font-extrabold bg-indigo-50/30 p-1.5 -mx-1.5 rounded w-full block";
-        return `<td class="${getQueueCellClass(header)}"><div class="${divClasses}">${replyHtml}</div></td>`;
+        return `<td class="${finalCellClass}"><div class="${divClasses}">${replyHtml}</div></td>`;
       }
 
       const attrs = editable
-        ? ` contenteditable="true" data-row-id="${rowId}" data-header="${escapeHtml(header)}" spellcheck="false" class="${getQueueCellClass(header)} focus:outline-none focus:bg-white focus:ring-1 focus:ring-indigo-400 rounded transition-all"`
+        ? ` contenteditable="true" data-row-id="${rowId}" data-header="${escapeHtml(header)}" spellcheck="false" class="${finalCellClass} focus:outline-none focus:bg-white focus:ring-1 focus:ring-indigo-400 rounded transition-all"`
         : '';
       return editable
         ? `<td${attrs}>${escapeHtml(value)}</td>`
-        : `<td class="${getQueueCellClass(header)}">${escapeHtml(value)}</td>`;
+        : `<td class="${finalCellClass}">${escapeHtml(value)}</td>`;
     });
 
     return `
@@ -663,6 +706,7 @@ async function pollStatus() {
     }
 
     updateSummary(latestQueue, latestWorkerState);
+    if (latestWorkerState.message) setStatus(latestWorkerState.message, false, { fromBatch: true });
     renderQueueTagFilter();
     renderQueueTable();
     syncBulkActionsState();
@@ -951,3 +995,31 @@ async function addSelectedToQueue() {
   await pollStatus();
   updateUI();
 }
+
+// Logic cho Debug Columns (Sử dụng Event Delegation vì HTML load động)
+document.addEventListener('click', (e) => {
+  const debugBtn = e.target.closest('#debugColumnsBtn');
+  const debugDropdown = document.getElementById('debugColumnsDropdown');
+  
+  if (debugBtn && debugDropdown) {
+    debugDropdown.classList.toggle('hidden');
+    e.stopPropagation();
+  } else if (debugDropdown && !e.target.closest('#debugColumnsDropdown')) {
+    debugDropdown.classList.add('hidden');
+  }
+});
+
+document.addEventListener('change', (e) => {
+  if (e.target.classList.contains('debug-col-toggle')) {
+    const col = e.target.value;
+    const ths = document.querySelectorAll(`.debug-th-${col}`);
+    const tds = document.querySelectorAll(`.debug-td-${col}`);
+    if (e.target.checked) {
+      ths.forEach(el => el.classList.remove('hidden'));
+      tds.forEach(el => el.classList.remove('hidden'));
+    } else {
+      ths.forEach(el => el.classList.add('hidden'));
+      tds.forEach(el => el.classList.add('hidden'));
+    }
+  }
+});

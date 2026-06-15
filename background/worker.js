@@ -305,12 +305,13 @@ async function getReplyCollectionLimit() {
   return Math.floor(raw);
 }
 
-async function readIncomingMessages(tabId, sentMessage, sentQidParam = "", replyLimit = DEFAULT_REPLY_COLLECTION_LIMIT) {
+async function readIncomingMessages(tabId, sentMessage, sentQidParam = "", replyLimit = DEFAULT_REPLY_COLLECTION_LIMIT, anchorQids = []) {
   const maxReplies = Math.max(0, Math.floor(Number(replyLimit) || 0));
   const result = await evaluateValue(tabId, `(() => {
     const normalize = (text) => (text || '').replace(/\\u00a0/g, ' ').replace(/\\s+/g, ' ').trim();
     const sentMsg = ${JSON.stringify(sentMessage || '')};
     const sentQidParam = ${JSON.stringify(sentQidParam || '')};
+    const anchorQids = ${JSON.stringify(anchorQids || [])};
 
     let nodes = [...document.querySelectorAll('.message-view [class*="chat-message"]')];
     if (!nodes.length) {
@@ -369,15 +370,25 @@ async function readIncomingMessages(tabId, sentMessage, sentQidParam = "", reply
 
     let startIndex = -1;
     let errorMsg = '';
-    if (sentQidParam) {
+    
+    if (anchorQids && anchorQids.length > 0) {
+       for (let i = messages.length - 1; i >= 0; i--) {
+          if (messages[i].qid && anchorQids.includes(messages[i].qid)) {
+             startIndex = i + 1;
+             break;
+          }
+       }
+    }
+    
+    if (startIndex === -1 && sentQidParam) {
        for (let i = messages.length - 1; i >= 0; i--) {
           if (messages[i].qid === sentQidParam) {
              startIndex = i + 1;
              break;
           }
        }
-       if (startIndex === -1) errorMsg = 'Không tìm thấy qid gửi đi (' + sentQidParam + '). Có thể tin nhắn đã trôi khỏi màn hình.';
-    } else if (sentMsg) {
+       if (startIndex === -1) errorMsg = 'Không tìm thấy qid gửi đi (' + sentQidParam + ') hoặc các phản hồi cũ. Có thể tin nhắn đã trôi khỏi màn hình.';
+    } else if (startIndex === -1 && sentMsg) {
        const sentNorm = normalize(sentMsg);
        for (let i = messages.length - 1; i >= 0; i--) {
           if (messages[i].isMine && (messages[i].text === sentNorm || messages[i].text.includes(sentNorm) || sentNorm.includes(messages[i].text))) {
@@ -386,7 +397,7 @@ async function readIncomingMessages(tabId, sentMessage, sentQidParam = "", reply
           }
        }
        if (startIndex === -1) errorMsg = 'Không tìm thấy text tin nhắn gửi đi trong màn hình.';
-    } else {
+    } else if (startIndex === -1) {
        startIndex = 0;
     }
 
@@ -398,7 +409,7 @@ async function readIncomingMessages(tabId, sentMessage, sentQidParam = "", reply
     if (typeof startIndex === 'number' && startIndex >= 0 && Array.isArray(messages)) {
        for (let i = startIndex; i < messages.length; i++) {
           if (messages[i] && !messages[i].isMine) {
-             items.push(messages[i].text);
+             items.push({ text: messages[i].text, qid: messages[i].qid });
           }
        }
     }
@@ -614,7 +625,9 @@ async function sendQueueRow(tabId, row) {
   }
 
   const shouldWait = String(row.values.wait_reply || '').trim().toLowerCase() === 'x';
-  if (sentQid) row.values.sent_qid = sentQid;
+  if (!sentQid) throw new Error('Không lấy được mã tin nhắn (sent_qid) sau khi gửi.');
+  row.values.sent_qid = sentQid;
+  
   const updatedRow = await updateQueueRow(row.id, {
     values: row.values,
     status: shouldWait ? 'wait_reply' : 'done',
@@ -634,6 +647,8 @@ async function sendQueueRow(tabId, row) {
 function mergeReplies(row, incomingItems, replyLimit = DEFAULT_REPLY_COLLECTION_LIMIT) {
   const maxReplies = Math.max(0, Math.floor(Number(replyLimit) || 0));
   const existing = Array.isArray(row.replies) ? row.replies : [];
+  const existingQids = Array.isArray(row.reply_qids) ? row.reply_qids : [];
+  
   if (!incomingItems || !incomingItems.length) {
     row.status = maxReplies > 0 && existing.length >= maxReplies ? 'done' : 'wait_reply';
     return false;
@@ -642,7 +657,7 @@ function mergeReplies(row, incomingItems, replyLimit = DEFAULT_REPLY_COLLECTION_
 
   // Lọc chỉ lấy tin nhắn mới thực sự (chưa có trong existing)
   const newItems = incomingItems.filter(item => {
-    const key = normalizeLookupText(item);
+    const key = normalizeLookupText(item.text);
     return key && !seen.has(key);
   });
 
@@ -653,11 +668,13 @@ function mergeReplies(row, incomingItems, replyLimit = DEFAULT_REPLY_COLLECTION_
   }
 
   for (const item of newItems) {
-    existing.push(item);
-    seen.add(normalizeLookupText(item));
+    existing.push(item.text);
+    if (item.qid) existingQids.push(item.qid);
+    seen.add(normalizeLookupText(item.text));
     if (maxReplies > 0 && existing.length >= maxReplies) break;
   }
   row.replies = maxReplies > 0 ? existing.slice(0, maxReplies) : existing;
+  row.reply_qids = maxReplies > 0 ? existingQids.slice(0, maxReplies) : existingQids;
   row.values.replies = row.replies.join('\n');
   row.status = maxReplies > 0 && row.replies.length >= maxReplies ? 'done' : 'wait_reply';
   return true;
@@ -708,13 +725,14 @@ async function pollQueueReplies(tabId) {
   try {
     const sentMessage = String(row.values.message || '').trim();
     const replyLimit = await getReplyCollectionLimit();
-    const incoming = await withZaloActionLock(() => readIncomingMessages(tabId, sentMessage, row.values?.sent_qid || "", replyLimit));
+    const incoming = await withZaloActionLock(() => readIncomingMessages(tabId, sentMessage, row.values?.sent_qid || "", replyLimit, row.reply_qids || []));
     const hasNewReplies = mergeReplies(row, incoming, replyLimit);
     
     const updatedRow = await updateQueueRow(row.id, {
       values: row.values,
       status: row.status,
-      replies: row.replies
+      replies: row.replies,
+      reply_qids: row.reply_qids
     });
     if (hasNewReplies) {
       notifyGoogleSheetRow(updatedRow).catch(console.error);
@@ -790,13 +808,14 @@ async function updateCurrentWaitFromActiveChat(tabId, current) {
   try {
     const sentMessage = String(row.values.message || '').trim();
     const replyLimit = await getReplyCollectionLimit();
-    const incoming = await readIncomingMessages(tabId, sentMessage, row.values?.sent_qid || "", replyLimit);
+    const incoming = await readIncomingMessages(tabId, sentMessage, row.values?.sent_qid || "", replyLimit, row.reply_qids || []);
     const hasNewReplies = mergeReplies(row, incoming, replyLimit);
     
     const updatedRow = await updateQueueRow(row.id, {
       values: row.values,
       status: row.status,
-      replies: row.replies
+      replies: row.replies,
+      reply_qids: row.reply_qids
     });
     if (hasNewReplies) {
       notifyGoogleSheetRow(updatedRow).catch(console.error);
