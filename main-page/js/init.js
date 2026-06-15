@@ -12,7 +12,7 @@ async function loadComponents() {
   const promises = Array.from(elements).map(async (el) => {
     const file = el.getAttribute('data-include');
     try {
-      const resp = await fetch(chrome.runtime.getURL(`main-page/components/${file}`));
+      const resp = await fetch(chrome.runtime.getURL(`main-page/components/${file}?t=${Date.now()}`));
       if (resp.ok) {
         el.innerHTML = await resp.text();
       } else {
