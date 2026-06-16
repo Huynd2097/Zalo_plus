@@ -626,6 +626,7 @@ async function sendQueueRow(tabId, row) {
 
   const shouldWait = String(row.values.wait_reply || '').trim().toLowerCase() === 'x';
   if (!sentQid) throw new Error('Không lấy được mã tin nhắn (sent_qid) sau khi gửi.');
+  if (sentQid.startsWith('undefined')) throw new Error('Lỗi lấy mã tin nhắn (qid bắt đầu bằng undefined). Vui lòng gửi lại.');
   row.values.sent_qid = sentQid;
   
   const updatedRow = await updateQueueRow(row.id, {
