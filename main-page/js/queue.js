@@ -497,15 +497,13 @@ function renderQueueTable() {
     "error": "Lỗi"
   };
 
-  const visibleHeaders = ['media_id', 'message', 'replies', 'send_at', 'note', 'wait_reply', 'error', 'updatedAt', 'id', 'sys_phone', 'sent_qid', 'reply_qids', 'tag', 'tag_color', 'media_name', 'media_thumbnail', 'sentAt', 'raw_error', 'zid'];
+  const visibleHeaders = ['media_id', 'message', 'replies', 'send_at', 'note', 'wait_reply', 'error', 'updatedAt', 'id', 'sys_phone', 'sent_qid', 'reply_qids', 'media_name', 'media_thumbnail', 'sentAt', 'raw_error', 'zid'];
 
   // Lấy trạng thái của các checkbox debug
   const debugIdChecked = document.querySelector('.debug-col-toggle[value="id"]')?.checked;
   const debugSysPhoneChecked = document.querySelector('.debug-col-toggle[value="sys_phone"]')?.checked;
   const debugSentQidChecked = document.querySelector('.debug-col-toggle[value="sent_qid"]')?.checked;
   const debugReplyQidsChecked = document.querySelector('.debug-col-toggle[value="reply_qids"]')?.checked;
-  const debugTagChecked = document.querySelector('.debug-col-toggle[value="tag"]')?.checked;
-  const debugTagColorChecked = document.querySelector('.debug-col-toggle[value="tag_color"]')?.checked;
   const debugMediaNameChecked = document.querySelector('.debug-col-toggle[value="media_name"]')?.checked;
   const debugMediaThumbnailChecked = document.querySelector('.debug-col-toggle[value="media_thumbnail"]')?.checked;
   const debugSentAtChecked = document.querySelector('.debug-col-toggle[value="sentAt"]')?.checked;
@@ -602,8 +600,6 @@ function renderQueueTable() {
       if (header === 'sys_phone' && debugSysPhoneChecked) finalCellClass = finalCellClass.replace('hidden', '').trim();
       if (header === 'sent_qid' && debugSentQidChecked) finalCellClass = finalCellClass.replace('hidden', '').trim();
       if (header === 'reply_qids' && debugReplyQidsChecked) finalCellClass = finalCellClass.replace('hidden', '').trim();
-      if (header === 'tag' && debugTagChecked) finalCellClass = finalCellClass.replace('hidden', '').trim();
-      if (header === 'tag_color' && debugTagColorChecked) finalCellClass = finalCellClass.replace('hidden', '').trim();
       if (header === 'media_name' && debugMediaNameChecked) finalCellClass = finalCellClass.replace('hidden', '').trim();
       if (header === 'media_thumbnail' && debugMediaThumbnailChecked) finalCellClass = finalCellClass.replace('hidden', '').trim();
       if (header === 'sentAt' && debugSentAtChecked) finalCellClass = finalCellClass.replace('hidden', '').trim();

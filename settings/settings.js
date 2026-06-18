@@ -1,4 +1,7 @@
 const GOOGLE_SHEET_WEB_APP_URL_KEY = 'googleSheetWebAppUrl';
+const DELAY_BETWEEN_ACTIONS_KEY = 'delayBetweenActions';
+const PAUSE_AFTER_KEY = 'pauseAfter';
+const PAUSE_DURATION_KEY = 'pauseDuration';
 
 const samplePayload = {
   status: 'Đang theo dõi',
@@ -74,6 +77,11 @@ function setSaveStatus(text) {
 
 async function saveUrl(value) {
   await chrome.storage.local.set({ [GOOGLE_SHEET_WEB_APP_URL_KEY]: value.trim() });
+  setSaveStatus('Đã tự lưu');
+}
+
+async function saveSetting(key, value) {
+  await chrome.storage.local.set({ [key]: value });
   setSaveStatus('Đã tự lưu');
 }
 
@@ -158,6 +166,29 @@ window.addEventListener('DOMContentLoaded', async () => {
     });
     input.addEventListener('change', () => saveUrl(input.value));
     input.addEventListener('blur', () => saveUrl(input.value));
+  }
+
+  const delayInput = document.getElementById('delayBetweenActionsInput');
+  const pauseAfterInput = document.getElementById('pauseAfterInput');
+  const pauseDurationInput = document.getElementById('pauseDurationInput');
+  
+  const settingsData = await chrome.storage.local.get([
+    DELAY_BETWEEN_ACTIONS_KEY,
+    PAUSE_AFTER_KEY,
+    PAUSE_DURATION_KEY
+  ]);
+
+  if (delayInput) {
+    delayInput.value = settingsData[DELAY_BETWEEN_ACTIONS_KEY] ?? 10;
+    delayInput.addEventListener('change', () => saveSetting(DELAY_BETWEEN_ACTIONS_KEY, Number(delayInput.value)));
+  }
+  if (pauseAfterInput) {
+    pauseAfterInput.value = settingsData[PAUSE_AFTER_KEY] ?? 15;
+    pauseAfterInput.addEventListener('change', () => saveSetting(PAUSE_AFTER_KEY, Number(pauseAfterInput.value)));
+  }
+  if (pauseDurationInput) {
+    pauseDurationInput.value = settingsData[PAUSE_DURATION_KEY] ?? 30;
+    pauseDurationInput.addEventListener('change', () => saveSetting(PAUSE_DURATION_KEY, Number(pauseDurationInput.value)));
   }
 
   document.getElementById('sendTestBtn')?.addEventListener('click', sendTestPayload);

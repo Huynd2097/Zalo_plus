@@ -10,11 +10,11 @@ async function typeAndSendCurrentChat(tabId, message) {
   if (!inputPoint) throw new Error('Khong tim thay o nhap Zalo.');
 
   await clickPoint(tabId, inputPoint);
-  await sleep(120);
+  await sleep(Math.floor(Math.random() * 1500 + 500) + 120);
   await clearFocusedText(tabId);
-  await sleep(150);
+  await sleep(Math.floor(Math.random() * 1500 + 500) + 150);
   await insertText(tabId, message);
-  await sleep(1000);
+  await sleep(Math.floor(Math.random() * 1500 + 500) + 1000);
 
   const expectedText = JSON.stringify(message);
   const readComposerTextExpression = `(() => {
@@ -53,11 +53,11 @@ async function typeAndSendCurrentChat(tabId, message) {
   let typed = await waitForComposerText() || await evaluateValue(tabId, readComposerTextExpression);
   if (normalizeComposerText(typed) !== normalizeComposerText(message)) {
     await clickPoint(tabId, inputPoint);
-    await sleep(120);
+    await sleep(Math.floor(Math.random() * 1500 + 500) + 120);
     await clearFocusedText(tabId);
-    await sleep(150);
+    await sleep(Math.floor(Math.random() * 1500 + 500) + 150);
     await insertText(tabId, message);
-    await sleep(1000);
+    await sleep(Math.floor(Math.random() * 1500 + 500) + 1000);
     typed = await waitForComposerText() || await evaluateValue(tabId, readComposerTextExpression);
   }
 
@@ -75,7 +75,7 @@ async function typeAndSendCurrentChat(tabId, message) {
   if (!sendPoint) throw new Error('Khong tim thay nut Send cua Zalo.');
 
   await clickPoint(tabId, sendPoint);
-  await sleep(800);
+  await sleep(Math.floor(Math.random() * 1500 + 500) + 800);
 
   const sentQid = await evaluateValue(tabId, `(() => {
     const nodes = [...document.querySelectorAll('.message-view [class*="chat-message"], .message-view [data-id], .message-view [class*="msg-item"], .message-view .message-frame')];
@@ -123,11 +123,11 @@ async function focusAndFillSelector(tabId, selector, text, timeoutMs = 8000) {
   if (!point) throw new Error(`Khong tim thay o nhap ${selector}.`);
 
   await clickPoint(tabId, point);
-  await sleep(120);
+  await sleep(Math.floor(Math.random() * 1500 + 500) + 120);
   await clearFocusedText(tabId);
-  await sleep(120);
+  await sleep(Math.floor(Math.random() * 1500 + 500) + 120);
   await insertText(tabId, text);
-  await sleep(200);
+  await sleep(Math.floor(Math.random() * 1500 + 500) + 200);
 }
 
 async function waitAndClickFixedSelector(tabId, selector, errMessage) {
@@ -139,7 +139,7 @@ async function waitAndClickFixedSelector(tabId, selector, errMessage) {
 
   if (!found) throw new Error(errMessage);
 
-  await sleep(600); // Đợi UI mở ra
+  await sleep(Math.floor(Math.random() * 1500 + 500) + 600); // Đợi UI mở ra
 
   await evaluateValue(tabId, `(() => {
     const els = Array.from(document.querySelectorAll(${JSON.stringify(selector)}));
@@ -173,11 +173,11 @@ async function createReminderCurrentChat(tabId, reminderAt, text) {
     }, 100);
   })()`;
   await evaluateValue(tabId, jsCodeOpenReminder);
-  await sleep(1500); // Chờ popup nhắc hẹn mở ra ban đầu
+  await sleep(Math.floor(Math.random() * 1500 + 500) + 1500); // Chờ popup nhắc hẹn mở ra ban đầu
 
   // 1. Điền text (nội dung) trước khi bấm Tuỳ chỉnh để không bị che
   await focusAndFillSelector(tabId, '.plain-text-wrapper', message);
-  await sleep(600);
+  await sleep(Math.floor(Math.random() * 1500 + 500) + 600);
 
   // 2. Click nút "Tuỳ chỉnh" (Other) để mở rộng ô chọn ngày/giờ
   const jsCodeClickOther = `(() => {
@@ -192,12 +192,12 @@ async function createReminderCurrentChat(tabId, reminderAt, text) {
     }, 100);
   })()`;
   await evaluateValue(tabId, jsCodeClickOther);
-  await sleep(800);
+  await sleep(Math.floor(Math.random() * 1500 + 500) + 800);
 
   // 3. Lúc này ô nhập ngày/giờ mới hiện lên, tiến hành nhập
   await focusAndFillSelector(tabId, 'input[data-id="txt_RMD_Date"]', reminder.date);
   await focusAndFillSelector(tabId, 'input[data-id="txt_RMD_Time"]', reminder.time);
-  await sleep(800);
+  await sleep(Math.floor(Math.random() * 1500 + 500) + 800);
 
   // 4. Click tạo
   const jsCodeFinish = `(() => {
@@ -212,7 +212,7 @@ async function createReminderCurrentChat(tabId, reminderAt, text) {
     }, 100);
   })()`;
   await evaluateValue(tabId, jsCodeFinish);
-  await sleep(1500);
+  await sleep(Math.floor(Math.random() * 1500 + 500) + 1500);
 }
 
 /**
@@ -259,7 +259,7 @@ async function pasteAndSendImageZalo(tabId, base64Data) {
     }
     if (!res?.ok) throw new Error(res?.error || 'Không thể dán ảnh vào Zalo.');
 
-    await sleep(1500); // Đợi Zalo nhận diện hình ảnh vừa dán
+    await sleep(Math.floor(Math.random() * 1500 + 500) + 1500); // Đợi Zalo nhận diện hình ảnh vừa dán
 
     const sendPoint = await evaluateValue(tabId, `(() => {
       const btn = document.querySelector('.send-msg-btn') || document.querySelector('[data-translate-title="STR_SEND"]');
@@ -270,7 +270,7 @@ async function pasteAndSendImageZalo(tabId, base64Data) {
     if (!sendPoint) throw new Error('Không tìm thấy nút gửi Zalo sau khi dán ảnh.');
 
     await clickPoint(tabId, sendPoint);
-    await sleep(800);
+    await sleep(Math.floor(Math.random() * 1500 + 500) + 800);
 
     const sentQid = await evaluateValue(tabId, `(() => {
       const nodes = [...document.querySelectorAll('.message-view [class*="chat-message"], .message-view [data-id], .message-view [class*="msg-item"], .message-view .message-frame')];
@@ -329,11 +329,11 @@ async function pasteImageAndTypeAndSend(tabId, base64Data, message) {
     }
     if (!res?.ok) throw new Error(res?.error || 'Không thể dán ảnh vào Zalo.');
 
-    await sleep(1500); // Đợi Zalo nhận diện hình ảnh vừa dán
+    await sleep(Math.floor(Math.random() * 1500 + 500) + 1500); // Đợi Zalo nhận diện hình ảnh vừa dán
 
     if (message) {
       await insertText(tabId, message);
-      await sleep(1000);
+      await sleep(Math.floor(Math.random() * 1500 + 500) + 1000);
     }
 
     const sendPoint = await evaluateValue(tabId, `(() => {
@@ -345,7 +345,7 @@ async function pasteImageAndTypeAndSend(tabId, base64Data, message) {
     if (!sendPoint) throw new Error('Không tìm thấy nút gửi Zalo sau khi dán ảnh/nhập chữ.');
 
     await clickPoint(tabId, sendPoint);
-    await sleep(800);
+    await sleep(Math.floor(Math.random() * 1500 + 500) + 800);
 
     const sentQid = await evaluateValue(tabId, `(() => {
       const nodes = [...document.querySelectorAll('.message-view [class*="chat-message"], .message-view [data-id], .message-view [class*="msg-item"], .message-view .message-frame')];
@@ -389,13 +389,13 @@ async function clickAddFriendIfAvailable(tabId) {
   if (!bannerPoint) return 'not_available';
 
   await clickPoint(tabId, bannerPoint);
-  await sleep(1200);
+  await sleep(Math.floor(Math.random() * 1500 + 500) + 1200);
 
   const panelPoint = await findExactVisibleTextPoint(tabId, 'Kết bạn', 400);
   if (!panelPoint) return 'opened_panel_without_button';
 
   await clickPoint(tabId, panelPoint);
-  await sleep(2500);
+  await sleep(Math.floor(Math.random() * 1500 + 500) + 2500);
 
   const successText = await evaluateValue(tabId, `(() => document.body.innerText.includes('Gửi yêu cầu kết bạn thành công'))()`);
   return successText ? 'sent' : 'clicked';
@@ -429,7 +429,7 @@ async function searchPhoneFirstResult(tabId, phone) {
   if (!normalizedPhone) throw new Error('Thieu phone de tim zid.');
 
   await tabsUpdate(tabId, { active: true });
-  await sleep(300);
+  await sleep(Math.floor(Math.random() * 1500 + 500) + 300);
 
   const searchPoint = await evaluateValue(tabId, `(() => {
     const el = document.querySelector('#contact-search-input');
@@ -440,9 +440,9 @@ async function searchPhoneFirstResult(tabId, phone) {
   if (!searchPoint) throw new Error('Khong tim thay o search Zalo.');
 
   await clickPoint(tabId, searchPoint);
-  await sleep(150);
+  await sleep(Math.floor(Math.random() * 1500 + 500) + 150);
   await clearFocusedText(tabId);
-  await sleep(150);
+  await sleep(Math.floor(Math.random() * 1500 + 500) + 150);
   await insertText(tabId, normalizedPhone);
 
   const searchValue = await waitForValue(
@@ -477,7 +477,7 @@ async function searchPhoneFirstResult(tabId, phone) {
   if (!firstResult) throw new Error(`Khong tim duoc ket qua dau cho so ${normalizedPhone}.`);
 
   await clickPoint(tabId, firstResult);
-  await sleep(800);
+  await sleep(Math.floor(Math.random() * 1500 + 500) + 800);
 
   return {
     phone: normalizedPhone,
@@ -491,7 +491,7 @@ async function searchPhoneSendSmsAndAddFriend(tabId, phone, sms) {
   // Full phone flow: search phone -> click first result -> send SMS -> read zid
   // -> try add friend if Zalo shows the button.
   await tabsUpdate(tabId, { active: true });
-  await sleep(300);
+  await sleep(Math.floor(Math.random() * 1500 + 500) + 300);
   await attachDebugger(tabId);
   try {
     const searchPoint = await evaluateValue(tabId, `(() => {
@@ -503,9 +503,9 @@ async function searchPhoneSendSmsAndAddFriend(tabId, phone, sms) {
     if (!searchPoint) throw new Error('Khong tim thay o search Zalo.');
 
     await clickPoint(tabId, searchPoint);
-    await sleep(150);
+    await sleep(Math.floor(Math.random() * 1500 + 500) + 150);
     await clearFocusedText(tabId);
-    await sleep(150);
+    await sleep(Math.floor(Math.random() * 1500 + 500) + 150);
     await insertText(tabId, phone);
 
     const searchValue = await waitForValue(
@@ -550,7 +550,7 @@ async function searchPhoneSendSmsAndAddFriend(tabId, phone, sms) {
     if (!opened) throw new Error('Cuoc hoi thoai tu search khong mo duoc dung ten.');
 
     await typeAndSendCurrentChat(tabId, sms);
-    await sleep(2700);
+    await sleep(Math.floor(Math.random() * 1500 + 500) + 2700);
     const conversation = await findConversationByNameOrSms(tabId, firstResult.name, sms);
     if (!conversation?.zid) throw new Error('Da gui SMS nhung khong lay duoc zid cua doan chat.');
     const addFriendState = await clickAddFriendIfAvailable(tabId);
@@ -575,16 +575,16 @@ async function runTask() {
   const zoomTab = await findFirstTabByUrl([/\.zoom\.us\//i]);
   if (zoomTab?.id) {
     await tabsUpdate(zoomTab.id, { active: true });
-    await sleep(300);
+    await sleep(Math.floor(Math.random() * 1500 + 500) + 300);
     await sendToTab(zoomTab.id, { type: 'ZOOM_END' });
-    await sleep(1800);
+    await sleep(Math.floor(Math.random() * 1500 + 500) + 1800);
   }
 
   const zaloTab = await findFirstTabByUrl([/chat\.zalo\.me/i]);
   if (!zaloTab?.id) throw new Error('Khong tim thay tab Zalo.');
 
   await tabsUpdate(zaloTab.id, { active: true });
-  await sleep(500);
+  await sleep(Math.floor(Math.random() * 1500 + 500) + 500);
   if (schedule.phone) {
     return searchPhoneSendSmsAndAddFriend(zaloTab.id, schedule.phone, schedule.message);
   }

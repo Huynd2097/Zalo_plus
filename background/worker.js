@@ -914,14 +914,26 @@ async function runWorkerLoop(tabId) {
           await withZaloActionLock(() => sendQueueRow(zaloTab.id, nextPending));
           sentCount++;
 
-          // Nghỉ sau mỗi 10 lượt gửi để tránh bị Zalo khóa tài khoản chống spam
-          if (sentCount % 10 === 0) {
-            const restTime = Math.floor(Math.random() * 5000) + 10000; // Nghỉ từ 10 đến 15 giây
-            await saveWorkerState({ message: `Đã gửi thành công ${sentCount} tin. Nghỉ ngơi ${Math.round(restTime / 1000)} giây chống quét bot...` });
+          // Load các cài đặt delay từ local storage
+          const settings = await storageGet([
+            'delayBetweenActions',
+            'pauseAfter',
+            'pauseDuration'
+          ]);
+          const delayBetween = Number(settings.delayBetweenActions ?? 10);
+          const pauseAfter = Number(settings.pauseAfter ?? 15);
+          const pauseDuration = Number(settings.pauseDuration ?? 30);
+
+          // Tạm dừng theo cài đặt "Tạm dừng sau X lần"
+          if (pauseAfter > 0 && sentCount > 0 && sentCount % pauseAfter === 0) {
+            const actualPauseDuration = pauseDuration * (0.75 + Math.random() * 0.75);
+            const restTime = Math.floor(actualPauseDuration * 1000);
+            await saveWorkerState({ message: `Đã hoàn thành ${sentCount} lần hành động. Tạm dừng ${Math.round(restTime / 1000)} giây...` });
             await sleep(restTime);
           } else {
-            // Delay bình thường giữa các lần gửi tin nhắn cho tự nhiên
-            const normalDelay = Math.floor(Math.random() * 2000) + 2000; // Delay từ 2 đến 4 giây
+            // Delay bình thường "Delay giữa 2 lần hành động"
+            const actualDelay = delayBetween * (0.75 + Math.random() * 0.75);
+            const normalDelay = Math.floor(actualDelay * 1000);
             await sleep(normalDelay);
           }
         } catch (err) {

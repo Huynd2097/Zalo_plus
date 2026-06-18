@@ -31,6 +31,34 @@
   <main class="max-w-5xl mx-auto px-4 sm:px-6 py-6 space-y-6">
     <section class="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
       <div class="bg-slate-50 border-b border-slate-200 px-5 py-3 flex items-center gap-2">
+        <i data-lucide="message-square" class="w-4.5 h-4.5 text-blue-600"></i>
+        <h2 class="font-semibold text-slate-700">Cài đặt gửi tin</h2>
+      </div>
+
+      <div class="p-5">
+        <div class="grid grid-cols-[1fr_auto_auto] items-center gap-x-4 gap-y-4 max-w-sm">
+          <label for="delayBetweenActionsInput" class="text-sm font-medium text-slate-700">Delay giữa 2 lần hành động</label>
+          <input id="delayBetweenActionsInput" type="number" min="0" step="1" value="10" class="w-20 border border-slate-300 rounded-md py-1.5 px-3 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 text-center">
+          <span class="text-sm text-slate-500 w-8">giây</span>
+
+          <label for="pauseAfterInput" class="text-sm font-medium text-slate-700">Tạm dừng sau</label>
+          <input id="pauseAfterInput" type="number" min="0" step="1" value="15" class="w-20 border border-slate-300 rounded-md py-1.5 px-3 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 text-center">
+          <span class="text-sm text-slate-500 w-8">lần</span>
+
+          <label for="pauseDurationInput" class="text-sm font-medium text-slate-700">Thời gian tạm dừng</label>
+          <input id="pauseDurationInput" type="number" min="0" step="1" value="30" class="w-20 border border-slate-300 rounded-md py-1.5 px-3 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 text-center">
+          <span class="text-sm text-slate-500 w-8">giây</span>
+        </div>
+
+        <p class="text-xs text-slate-500 mt-4 flex items-center gap-1">
+          <i data-lucide="info" class="w-3 h-3 text-slate-400"></i>
+          thời gian delay sẽ ngẫu nhiên từ 0.75-1.5 lần thời gian đc đặt
+        </p>
+      </div>
+    </section>
+
+    <section class="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+      <div class="bg-slate-50 border-b border-slate-200 px-5 py-3 flex items-center gap-2">
         <i data-lucide="database" class="w-4.5 h-4.5 text-emerald-600"></i>
         <h2 class="font-semibold text-slate-700">Tích hợp Google Sheets</h2>
       </div>

@@ -188,9 +188,41 @@ async function clearFocusedText(tabId) {
 }
 
 async function insertText(tabId, text) {
-  // Input.insertText keeps Vietnamese text intact, unlike per-key events through
-  // some shell/codepage paths.
-  await debuggerCommand(tabId, 'Input.insertText', { text });
+  const injected = await scriptingExecuteScript({
+    target: { tabId },
+    func: (textToPaste) => {
+      try {
+        const targetInput = document.querySelector('#richInput') || document.activeElement;
+        if (!targetInput || targetInput === document.body) {
+          return { ok: false, error: 'Chua focus vao o nhap tin nhan Zalo.' };
+        }
+        targetInput.focus();
+        
+        const dataTransfer = new DataTransfer();
+        dataTransfer.setData('text/plain', textToPaste);
+        dataTransfer.setData('text', textToPaste);
+        
+        targetInput.dispatchEvent(new ClipboardEvent('paste', {
+          clipboardData: dataTransfer,
+          bubbles: true,
+          cancelable: true
+        }));
+        
+        return { ok: true };
+      } catch (err) {
+        return { ok: false, error: err?.message || String(err) };
+      }
+    },
+    args: [text]
+  });
+  
+  const res = injected?.[0]?.result;
+  if (!res?.ok) {
+    // Fallback if paste event fails
+    console.warn('Paste event failed, fallback is disabled for debugging.', res?.error);
+    throw new Error('Giả lập paste text thất bại: ' + (res?.error || 'Unknown error'));
+    // await debuggerCommand(tabId, 'Input.insertText', { text });
+  }
 }
 
 async function waitForValue(tabId, expression, timeoutMs = 10000, intervalMs = 250) {
