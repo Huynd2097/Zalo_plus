@@ -2,6 +2,7 @@ const GOOGLE_SHEET_WEB_APP_URL_KEY = 'googleSheetWebAppUrl';
 const DELAY_BETWEEN_ACTIONS_KEY = 'delayBetweenActions';
 const PAUSE_AFTER_KEY = 'pauseAfter';
 const PAUSE_DURATION_KEY = 'pauseDuration';
+const MAX_RETRIES_KEY = 'maxRetries';
 
 const samplePayload = {
   status: 'Đang theo dõi',
@@ -171,11 +172,13 @@ window.addEventListener('DOMContentLoaded', async () => {
   const delayInput = document.getElementById('delayBetweenActionsInput');
   const pauseAfterInput = document.getElementById('pauseAfterInput');
   const pauseDurationInput = document.getElementById('pauseDurationInput');
+  const maxRetriesInput = document.getElementById('maxRetriesInput');
   
   const settingsData = await chrome.storage.local.get([
     DELAY_BETWEEN_ACTIONS_KEY,
     PAUSE_AFTER_KEY,
-    PAUSE_DURATION_KEY
+    PAUSE_DURATION_KEY,
+    MAX_RETRIES_KEY
   ]);
 
   if (delayInput) {
@@ -189,6 +192,10 @@ window.addEventListener('DOMContentLoaded', async () => {
   if (pauseDurationInput) {
     pauseDurationInput.value = settingsData[PAUSE_DURATION_KEY] ?? 30;
     pauseDurationInput.addEventListener('change', () => saveSetting(PAUSE_DURATION_KEY, Number(pauseDurationInput.value)));
+  }
+  if (maxRetriesInput) {
+    maxRetriesInput.value = settingsData[MAX_RETRIES_KEY] ?? 2;
+    maxRetriesInput.addEventListener('change', () => saveSetting(MAX_RETRIES_KEY, Number(maxRetriesInput.value)));
   }
 
   document.getElementById('sendTestBtn')?.addEventListener('click', sendTestPayload);

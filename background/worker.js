@@ -217,6 +217,10 @@ async function waitForCorrectZaloChat(tabId, zid, timeoutMs = 12000) {
     const r = input.getBoundingClientRect();
     if (!r.width || !r.height) return null;
 
+    // Đảm bảo phần chứa tin nhắn cũng đã render
+    const msgView = document.querySelector('.message-view');
+    if (!msgView) return null;
+
     let urlMatches = false;
     try {
       urlMatches = new URL(location.href).searchParams.get('c') === zid;
@@ -227,8 +231,8 @@ async function waitForCorrectZaloChat(tabId, zid, timeoutMs = 12000) {
       return cls.includes('active') || cls.includes('selected') || cls.includes('focus');
     });
     const domMatches = activeItems.some((el) => el.getAttribute('anim-data-id') === zid);
-    if (activeItems.length) return domMatches ? true : null;
-    return urlMatches ? true : null;
+    if (domMatches || urlMatches) return true;
+    return null;
   })()`, timeoutMs, 250);
 }
 
@@ -590,17 +594,29 @@ async function sendQueueRow(tabId, row) {
   }
 
   let sentQid = '';
-  if (message && !mediaId) {
-    sentQid = await typeAndSendCurrentChat(tabId, message);
-  } else if (mediaId) {
-    const data = await storageGet(['mediaStore']);
-    const mediaStore = data.mediaStore || {};
-    const mediaObj = mediaStore[mediaId];
-    const base64Data = typeof mediaObj === 'string' ? mediaObj : mediaObj?.base64;
-    if (base64Data) {
-      sentQid = await pasteImageAndTypeAndSend(tabId, base64Data, message);
-    } else if (message) {
+  
+  // Kiểm tra chống gửi trùng: Nếu tin nhắn gần nhất đã gửi giống hệt tin muốn gửi thì bỏ qua
+  if (!isReminder && message) {
+    const alreadySentQid = await verifyMessageSentInChat(tabId, null, message);
+    if (alreadySentQid) {
+      sentQid = typeof alreadySentQid === 'string' && alreadySentQid !== 'true' ? alreadySentQid : 'unknown_qid';
+    }
+  }
+
+  // Nếu chưa gửi, thì tiến hành gửi
+  if (!sentQid) {
+    if (message && !mediaId) {
       sentQid = await typeAndSendCurrentChat(tabId, message);
+    } else if (mediaId) {
+      const data = await storageGet(['mediaStore']);
+      const mediaStore = data.mediaStore || {};
+      const mediaObj = mediaStore[mediaId];
+      const base64Data = typeof mediaObj === 'string' ? mediaObj : mediaObj?.base64;
+      if (base64Data) {
+        sentQid = await pasteImageAndTypeAndSend(tabId, base64Data, message);
+      } else if (message) {
+        sentQid = await typeAndSendCurrentChat(tabId, message);
+      }
     }
   }
   if (opened.foundByPhone && !String(row.values.zid || '').trim()) {
@@ -881,6 +897,57 @@ function hasSkippedRetryRows(queue, now, skipIds) {
   });
 }
 
+async function verifyMessageSentInChat(tabId, sentQid, sentMessage) {
+  return evaluateValue(tabId, `(() => {
+    let nodes = [...document.querySelectorAll('.message-view [class*="chat-message"], .message-view [data-id], .message-view [class*="msg-item"], .message-view .message-frame')];
+    if (!nodes.length) nodes = [...document.querySelectorAll('.message-view [class*="message-item"], .message-view [class*="chat-item"]')];
+
+    const normalize = (text) => (text || '').replace(/\\u00a0/g, ' ').replace(/\\s+/g, ' ').trim();
+    const sentNorm = normalize(${JSON.stringify(sentMessage || '')});
+    const qidParam = ${JSON.stringify(sentQid || '')};
+
+    for (let i = 0; i < nodes.length; i++) {
+      const el = nodes[i];
+      const cls = (el.className || '').toLowerCase();
+      
+      let isMine = /\\b(me|mine|self|owner|sent|right)\\b/.test(cls);
+      if (!isMine) {
+        const viewEl = el.closest('.message-view');
+        if (viewEl) {
+          const viewCenter = viewEl.getBoundingClientRect().left + viewEl.getBoundingClientRect().width / 2;
+          const bubble = el.querySelector('.card, .shadow-bubble, [class*="bubble"]');
+          if (bubble) {
+             const bRect = bubble.getBoundingClientRect();
+             if (bRect.width > 0 && (bRect.left + bRect.width / 2 >= viewCenter)) isMine = true;
+          }
+        }
+      }
+      if (!isMine) continue;
+
+      const qid = el.getAttribute('data-qid') || el.querySelector('[data-qid]')?.getAttribute('data-qid');
+      const tempId = el.getAttribute('data-id') || el.id;
+      const finalQid = qid || tempId;
+
+      if (qidParam && (qid === qidParam || tempId === qidParam)) {
+        return finalQid || true;
+      }
+      
+      if (sentNorm) {
+        const clone = el.cloneNode(true);
+        const quotes = [...clone.querySelectorAll('.message-quote-fragment__container, [class*="message-quote-fragment"]')];
+        quotes.forEach(e => e.remove());
+        const emojis = [...clone.querySelectorAll('img[src*="emoji"], img[class*="emo"], span[class*="emo"], .sticker-msg, img[src*="sticker"], div[class*="sticker"]')];
+        emojis.forEach(e => e.remove());
+        const timeSpans = [...clone.querySelectorAll('.card-send-time, [class*="time"], [class*="date"], .message-reaction-container, [class*="reaction"]')];
+        timeSpans.forEach(e => e.remove());
+        let text = normalize(clone.innerText || clone.textContent || '');
+        if (text === sentNorm || text.includes(sentNorm) || sentNorm.includes(text)) return finalQid || true;
+      }
+    }
+    return false;
+  })()`);
+}
+
 /**
  * Luồng lặp tuần hoàn của worker xử lý hàng chờ.
  * @param {number} tabId - ID tab Zalo
@@ -892,6 +959,7 @@ async function runWorkerLoop(tabId) {
 
   await withZaloActionLock(() => attachDebugger(zaloTab.id));
   const retryAfterRoundIds = new Set();
+  const roundSentRowIds = new Set();
   let sentCount = 0;
   
   try {
@@ -912,6 +980,7 @@ async function runWorkerLoop(tabId) {
         try {
           await updateQueueRow(nextPending.id, { status: 'sending' });
           await withZaloActionLock(() => sendQueueRow(zaloTab.id, nextPending));
+          roundSentRowIds.add(nextPending.id);
           sentCount++;
 
           // Load các cài đặt delay từ local storage
@@ -939,7 +1008,80 @@ async function runWorkerLoop(tabId) {
         } catch (err) {
           // Ghi nhận lỗi thực tế và chuyển sang dòng tiếp theo (không kẹt lại ở dòng này)
           await updateQueueRow(nextPending.id, { status: 'error', error: err?.message || String(err) });
+          roundSentRowIds.add(nextPending.id);
         }
+        continue;
+      }
+
+      if (roundSentRowIds.size > 0) {
+        await saveWorkerState({ phase: 'sending', currentRowId: null, message: 'Đang kiểm tra lại các tin nhắn đã gửi trong lượt...' });
+        const settings = await storageGet(['maxRetries']);
+        const maxRetries = Number(settings.maxRetries ?? 2);
+        
+        for (const rowId of roundSentRowIds) {
+          const row = queue.byId[rowId];
+          if (!row) continue;
+          
+          let hasError = false;
+          let errMsg = row.error || 'Lỗi gửi tin nhắn (kiểm tra lại)';
+          
+          if (row.values && (row.values.sent_qid || row.values.message || row.values.media_id)) {
+             try {
+                // Chỉ check nếu mở được hội thoại
+                const opened = await openBatchRowChatForSend(zaloTab.id, row);
+                if (!opened.foundByPhone && !String(row.values.zid || '').trim()) {
+                   throw new Error('Không lấy được ID cuộc trò chuyện.');
+                }
+                const foundQid = await verifyMessageSentInChat(zaloTab.id, row.values.sent_qid, row.values.message);
+                if (foundQid) {
+                   hasError = false; // Đã tìm thấy tin nhắn
+                   if (typeof foundQid === 'string' && foundQid !== 'true') {
+                      row.values.sent_qid = foundQid; // Cập nhật lại ID tin nhắn
+                   }
+                } else {
+                   hasError = true;
+                   errMsg = 'Zalo đã xóa tin nhắn hoặc gửi lỗi (mất tin)';
+                }
+             } catch(err) {
+                // Lỗi không mở được hội thoại hoặc các lỗi khác
+                hasError = true;
+                errMsg = row.error || err?.message || 'Lỗi kiểm tra lại tin nhắn';
+             }
+          } else if (row.error) {
+             hasError = true;
+          }
+
+          if (hasError) {
+             const retryCount = row.retry_count || 0;
+             if (retryCount < maxRetries) {
+                await updateQueueRow(rowId, { 
+                   status: 'pending', 
+                   error: '',
+                   retry_count: retryCount + 1,
+                   values: { ...row.values, sent_qid: '' }
+                });
+             } else {
+                await updateQueueRow(rowId, {
+                   status: 'error',
+                   error: errMsg,
+                   retry_count: retryCount
+                });
+             }
+          } else {
+             // Khắc phục được lỗi, tin nhắn đã gửi thành công
+             if (row.error || row.status === 'error') {
+                const shouldWait = String(row.values.wait_reply || '').trim().toLowerCase() === 'x';
+                await updateQueueRow(rowId, {
+                   status: shouldWait ? 'wait_reply' : 'done',
+                   error: '',
+                   values: row.values,
+                   sentAt: row.sentAt || Date.now()
+                });
+             }
+          }
+        }
+        
+        roundSentRowIds.clear();
         continue;
       }
 

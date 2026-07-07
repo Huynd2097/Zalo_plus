@@ -77,19 +77,33 @@ async function typeAndSendCurrentChat(tabId, message) {
   await clickPoint(tabId, sendPoint);
   await sleep(Math.floor(Math.random() * 1500 + 500) + 800);
 
-  const sentQid = await evaluateValue(tabId, `(() => {
-    const nodes = [...document.querySelectorAll('.message-view [class*="chat-message"], .message-view [data-id], .message-view [class*="msg-item"], .message-view .message-frame')];
+  const sentQid = await waitForValue(tabId, `(() => {
+    let nodes = [...document.querySelectorAll('.message-view [class*="chat-message"], .message-view [data-id], .message-view [class*="msg-item"], .message-view .message-frame')];
+    if (!nodes.length) nodes = [...document.querySelectorAll('.message-view [class*="message-item"], .message-view [class*="chat-item"]')];
     const meNodes = nodes.filter(el => {
       const cls = (el.className || '').toLowerCase();
-      return /\\b(me|mine|self|owner|sent|right)\\b/.test(cls);
+      if (/\\b(me|mine|self|owner|sent|right)\\b/.test(cls)) return true;
+      const viewEl = el.closest('.message-view');
+      if (!viewEl) return false;
+      const viewCenter = viewEl.getBoundingClientRect().left + viewEl.getBoundingClientRect().width / 2;
+      const bubble = el.querySelector('.card, .shadow-bubble, [class*="bubble"]');
+      if (bubble) {
+         const bRect = bubble.getBoundingClientRect();
+         if (bRect.width > 0 && (bRect.left + bRect.width / 2 >= viewCenter)) return true;
+      }
+      return false;
     });
     const last = meNodes[meNodes.length - 1];
     if (last) {
-       return last.getAttribute('data-qid') || last.querySelector('[data-qid]')?.getAttribute('data-qid') || '';
+       const qid = last.getAttribute('data-qid') || last.querySelector('[data-qid]')?.getAttribute('data-qid');
+       if (qid) return qid;
+       // Nếu Zalo chưa có data-qid liền, có thể chờ hoặc lấy data-id tạm
+       const tempId = last.getAttribute('data-id') || last.id;
+       return tempId || 'unknown_qid';
     }
-    return '';
-  })()`);
-  return sentQid;
+    return null;
+  })()`, 5000, 300);
+  return sentQid || '';
 }
 
 async function typeAndSendZalo(tabId, message) {
@@ -272,19 +286,32 @@ async function pasteAndSendImageZalo(tabId, base64Data) {
     await clickPoint(tabId, sendPoint);
     await sleep(Math.floor(Math.random() * 1500 + 500) + 800);
 
-    const sentQid = await evaluateValue(tabId, `(() => {
-      const nodes = [...document.querySelectorAll('.message-view [class*="chat-message"], .message-view [data-id], .message-view [class*="msg-item"], .message-view .message-frame')];
+    const sentQid = await waitForValue(tabId, `(() => {
+      let nodes = [...document.querySelectorAll('.message-view [class*="chat-message"], .message-view [data-id], .message-view [class*="msg-item"], .message-view .message-frame')];
+      if (!nodes.length) nodes = [...document.querySelectorAll('.message-view [class*="message-item"], .message-view [class*="chat-item"]')];
       const meNodes = nodes.filter(el => {
         const cls = (el.className || '').toLowerCase();
-        return /\\b(me|mine|self|owner|sent|right)\\b/.test(cls);
+        if (/\\b(me|mine|self|owner|sent|right)\\b/.test(cls)) return true;
+        const viewEl = el.closest('.message-view');
+        if (!viewEl) return false;
+        const viewCenter = viewEl.getBoundingClientRect().left + viewEl.getBoundingClientRect().width / 2;
+        const bubble = el.querySelector('.card, .shadow-bubble, [class*="bubble"]');
+        if (bubble) {
+           const bRect = bubble.getBoundingClientRect();
+           if (bRect.width > 0 && (bRect.left + bRect.width / 2 >= viewCenter)) return true;
+        }
+        return false;
       });
       const last = meNodes[meNodes.length - 1];
       if (last) {
-         return last.getAttribute('data-qid') || last.querySelector('[data-qid]')?.getAttribute('data-qid') || '';
+         const qid = last.getAttribute('data-qid') || last.querySelector('[data-qid]')?.getAttribute('data-qid');
+         if (qid) return qid;
+         const tempId = last.getAttribute('data-id') || last.id;
+         return tempId || 'unknown_qid';
       }
-      return '';
-    })()`);
-    return sentQid;
+      return null;
+    })()`, 5000, 300);
+    return sentQid || '';
   } finally {
     await detachDebugger(tabId);
   }
@@ -347,19 +374,32 @@ async function pasteImageAndTypeAndSend(tabId, base64Data, message) {
     await clickPoint(tabId, sendPoint);
     await sleep(Math.floor(Math.random() * 1500 + 500) + 800);
 
-    const sentQid = await evaluateValue(tabId, `(() => {
-      const nodes = [...document.querySelectorAll('.message-view [class*="chat-message"], .message-view [data-id], .message-view [class*="msg-item"], .message-view .message-frame')];
+    const sentQid = await waitForValue(tabId, `(() => {
+      let nodes = [...document.querySelectorAll('.message-view [class*="chat-message"], .message-view [data-id], .message-view [class*="msg-item"], .message-view .message-frame')];
+      if (!nodes.length) nodes = [...document.querySelectorAll('.message-view [class*="message-item"], .message-view [class*="chat-item"]')];
       const meNodes = nodes.filter(el => {
         const cls = (el.className || '').toLowerCase();
-        return /\\b(me|mine|self|owner|sent|right)\\b/.test(cls);
+        if (/\\b(me|mine|self|owner|sent|right)\\b/.test(cls)) return true;
+        const viewEl = el.closest('.message-view');
+        if (!viewEl) return false;
+        const viewCenter = viewEl.getBoundingClientRect().left + viewEl.getBoundingClientRect().width / 2;
+        const bubble = el.querySelector('.card, .shadow-bubble, [class*="bubble"]');
+        if (bubble) {
+           const bRect = bubble.getBoundingClientRect();
+           if (bRect.width > 0 && (bRect.left + bRect.width / 2 >= viewCenter)) return true;
+        }
+        return false;
       });
       const last = meNodes[meNodes.length - 1];
       if (last) {
-         return last.getAttribute('data-qid') || last.querySelector('[data-qid]')?.getAttribute('data-qid') || '';
+         const qid = last.getAttribute('data-qid') || last.querySelector('[data-qid]')?.getAttribute('data-qid');
+         if (qid) return qid;
+         const tempId = last.getAttribute('data-id') || last.id;
+         return tempId || 'unknown_qid';
       }
-      return '';
-    })()`);
-    return sentQid;
+      return null;
+    })()`, 5000, 300);
+    return sentQid || '';
   } finally {
     await detachDebugger(tabId);
   }
