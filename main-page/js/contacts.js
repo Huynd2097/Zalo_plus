@@ -122,10 +122,53 @@ function setDirectoryTagFilter(tag) {
  */
 function renderDirectoryTags() {
   const container = document.getElementById("tagFilterContainer");
-  if (!container) return;
-  const tags = getAllUniqueTags();
+  const dropdownOptions = document.getElementById("directoryTagDropdownOptions");
+  const dropdownLabel = document.getElementById("directoryTagDropdownLabel");
+  
+  const allTags = getAllUniqueTags();
+  
+  if (dropdownOptions) {
+    dropdownOptions.innerHTML = allTags.map(tag => {
+      const isActive = currentDirectoryTagFilter === tag;
+      const tagColor = tag === 'Tất cả' ? '#4f46e5' : getCanonicalTagColor(tag);
+      const isDefault = tag === 'Tất cả';
+      return `
+        <button data-dropdown-tag="${escapeHtml(tag)}"
+          class="w-full text-left px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50 flex items-center gap-1.5 ${isActive ? 'bg-slate-50 font-bold' : ''}">
+          ${isDefault ? '' : `<span class="px-1.5 py-0.5 rounded text-white font-extrabold inline-block text-[10px]" style="background-color: ${escapeHtml(tagColor)}">${escapeHtml(tag)}</span>`}
+          ${isDefault ? 'Tất cả tag' : ''}
+        </button>
+      `;
+    }).join("");
+  }
+  
+  if (dropdownLabel) {
+    dropdownLabel.innerText = (!currentDirectoryTagFilter || currentDirectoryTagFilter === "Tất cả") ? "Chọn tag" : currentDirectoryTagFilter;
+  }
 
-  container.innerHTML = tags.map(tag => {
+  if (!container) return;
+
+  const sortedContacts = [...latestContacts].sort((a, b) => {
+    const timeA = Number(a.updatedAt) || Date.parse(a.updatedAt) || 0;
+    const timeB = Number(b.updatedAt) || Date.parse(b.updatedAt) || 0;
+    return timeB - timeA;
+  });
+  
+  const recentTagsSet = new Set();
+  for (const c of sortedContacts) {
+    if (c.tag && c.tag !== 'Tất cả') {
+      recentTagsSet.add(c.tag);
+      if (recentTagsSet.size >= 3) break;
+    }
+  }
+  
+  if (currentDirectoryTagFilter && currentDirectoryTagFilter !== "Tất cả") {
+    recentTagsSet.add(currentDirectoryTagFilter);
+  }
+
+  const quickTags = ["Tất cả", ...Array.from(recentTagsSet)];
+
+  container.innerHTML = quickTags.map(tag => {
     const isActive = currentDirectoryTagFilter === tag;
     const tagColor = tag === 'Tất cả' ? '#4f46e5' : getCanonicalTagColor(tag);
     const colorStyle = tag === 'Tất cả'

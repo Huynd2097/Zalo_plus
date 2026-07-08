@@ -373,6 +373,18 @@ async function initialize() {
     renderContactsDatabaseTable();
   });
 
+  document.getElementById("directoryTagDropdownBtn")?.addEventListener("click", () => {
+    document.getElementById("directoryTagDropdownMenu")?.classList.toggle("hidden");
+  });
+
+  document.getElementById("directoryTagDropdownOptions")?.addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-dropdown-tag]");
+    if (!btn) return;
+    const tag = btn.dataset.dropdownTag;
+    setDirectoryTagFilter(tag);
+    document.getElementById("directoryTagDropdownMenu")?.classList.add("hidden");
+  });
+
   document.querySelectorAll("[data-contact-sort]").forEach((btn) => {
     btn.addEventListener("click", () => setContactSort(btn.dataset.contactSort));
   });
@@ -549,6 +561,11 @@ async function initialize() {
     const contactTagBtn = document.getElementById("contactTagFilterBtn");
     if (contactTagDropdown && !contactTagDropdown.contains(e.target) && !contactTagBtn?.contains(e.target)) {
       contactTagDropdown.classList.add("hidden");
+    }
+    const dirTagDropdown = document.getElementById("directoryTagDropdownMenu");
+    const dirTagBtn = document.getElementById("directoryTagDropdownBtn");
+    if (dirTagDropdown && !dirTagDropdown.contains(e.target) && !dirTagBtn?.contains(e.target)) {
+      dirTagDropdown.classList.add("hidden");
     }
   });
 

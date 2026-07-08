@@ -94,6 +94,19 @@
 
       <!-- Tag filter horizontal scroll bar -->
       <div class="relative flex items-center mb-2">
+        <div class="relative flex-shrink-0 mr-2">
+          <button id="directoryTagDropdownBtn"
+            class="bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-bold py-1 px-2.5 rounded-lg text-xs flex items-center gap-1 transition-all">
+            <span id="directoryTagDropdownLabel">Chọn tag</span>
+            <i data-lucide="chevron-down" class="w-3 h-3"></i>
+          </button>
+          <div id="directoryTagDropdownMenu"
+            class="origin-top-left absolute left-0 mt-1 w-48 max-h-64 overflow-y-auto rounded-lg shadow-md bg-white ring-1 ring-black ring-opacity-5 z-20 hidden">
+            <div class="py-1" id="directoryTagDropdownOptions">
+              <!-- Render dropdown options -->
+            </div>
+          </div>
+        </div>
         <div id="tagFilterContainer"
           class="flex items-center gap-1 overflow-x-auto no-scrollbar pb-1 w-full select-none">
           <!-- Render tag -->
