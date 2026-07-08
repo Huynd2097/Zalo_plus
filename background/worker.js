@@ -1253,34 +1253,50 @@ async function verifyQueueRows(ids) {
       const row = queue.byId[id];
       if (!row) continue;
 
-      await saveWorkerState({ currentRowId: id, message: `Đang check lại tin cho: ${row.values.display_name || row.values.phone || row.values.sys_phone || row.values.zid}` });
+      const name = row.values.display_name || row.values.name || row.values.phone || row.values.sys_phone || row.values.zid;
+      await saveWorkerState({ currentRowId: id, message: `Đang check lại tin cho: ${name}` });
 
-      const opened = await openBatchRowChatForSend(zaloTab.id, row);
-      if (!opened.ok) {
-        continue;
-      }
+      try {
+        await openBatchRowChatForSend(zaloTab.id, row);
 
-      await sleep(1500);
-      
-      const message = String(row.values.message || '').trim() || String(row.values.note || '').trim();
-      const mediaId = String(row.values.media_id || '').trim();
-      
-      let sentQid = false;
-      if (!mediaId && message) {
-         sentQid = await verifyMessageSentInChat(zaloTab.id, null, message);
-      } else if (mediaId && !message) {
-         sentQid = true; // Chỉ có ảnh thì coi như xong
-      } else if (mediaId && message) {
-         sentQid = await verifyMessageSentInChat(zaloTab.id, null, message);
-      }
+        await sleep(1500);
+        
+        const message = String(row.values.message || '').trim() || String(row.values.note || '').trim();
+        const mediaId = String(row.values.media_id || '').trim();
+        
+        let sentQid = false;
+        if (!mediaId && message) {
+           sentQid = await verifyMessageSentInChat(zaloTab.id, null, message);
+        } else if (mediaId && !message) {
+           sentQid = true; // Chỉ có ảnh thì coi như xong
+        } else if (mediaId && message) {
+           sentQid = await verifyMessageSentInChat(zaloTab.id, null, message);
+        }
 
-      if (sentQid) {
+        if (sentQid) {
+          const shouldWait = String(row.values.wait_reply || '').trim().toLowerCase() === 'x';
+          await updateQueueRow(id, {
+            status: shouldWait ? 'wait_reply' : 'done',
+            error: '',
+            sentAt: row.sentAt || Date.now()
+          });
+          await saveWorkerState({ currentRowId: id, message: `Check ${name}: Đã gửi -> OK!` });
+        } else {
+          await updateQueueRow(id, {
+            status: 'error',
+            error: 'Zalo đã xóa tin nhắn hoặc chưa gửi'
+          });
+          await saveWorkerState({ currentRowId: id, message: `Check ${name}: Không tìm thấy tin nhắn!` });
+        }
+      } catch (err) {
         await updateQueueRow(id, {
-          status: 'done',
-          error: '',
-          sentAt: Date.now()
+          status: 'error',
+          error: err?.message || 'Lỗi kiểm tra lại tin nhắn'
         });
+        await saveWorkerState({ currentRowId: id, message: `Check ${name}: Lỗi - ${err?.message || 'Không mở được chat'}` });
       }
+      
+      await sleep(1500); // Đợi 1.5s để người dùng đọc dòng thông báo trước khi sang người tiếp theo
     }
   } finally {
     if (zaloTab && zaloTab.id) {

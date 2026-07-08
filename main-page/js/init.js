@@ -479,7 +479,7 @@ async function initialize() {
         showToast(resp.error || 'Lỗi kiểm tra lại', 'error');
       } else {
         selectedQueueIds.clear();
-        updateUI();
+        await pollStatus();
       }
     } catch (e) {
       showToast(e.message || 'Lỗi kết nối background', 'error');
