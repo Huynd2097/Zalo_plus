@@ -907,6 +907,9 @@ async function verifyMessageSentInChat(tabId, sentQid, sentMessage) {
     const sentNorm = normalize(${JSON.stringify(sentMessage || '')});
     const qidParam = ${JSON.stringify(sentQid || '')};
 
+    // Check n tin nhắn gần nhất (tất cả các tin đang được render trên UI) thay vì chỉ 1 tin cuối cùng.
+    // Lý do: Để tránh trường hợp user có thể đã gửi 1 tin nhắn khác xen vào ngay sau khi tool vừa gửi,
+    // nếu chỉ check 1 tin cuối cùng thì sẽ không thấy tin của tool và lầm tưởng chưa gửi, dẫn đến gửi nhầm lần 2.
     for (let i = 0; i < nodes.length; i++) {
       const el = nodes[i];
       const cls = (el.className || '').toLowerCase();
