@@ -529,6 +529,55 @@ async function updateTagColor(tag, color) {
 }
 
 /**
+ * Xoá một tag khỏi toàn bộ danh bạ.
+ */
+async function deleteTagFromAllContacts(tag) {
+  const tagText = String(tag || '').trim();
+  if (!tagText) throw new Error('Thiếu tên nhãn cần xoá.');
+
+  const contactMap = await loadContactMap();
+  let changed = false;
+
+  const tagKey = normalizeTagKeyForColor(tagText);
+  const seen = new Set();
+  const updateRecord = (record) => {
+    if (!record || seen.has(record)) return;
+    seen.add(record);
+    if (normalizeTagKeyForColor(record.tag) === tagKey) {
+      record.tag = '';
+      record.tag_color = '';
+      record.updatedAt = Date.now();
+      changed = true;
+    }
+  };
+
+  Object.values(contactMap.byZid || {}).forEach(updateRecord);
+  Object.values(contactMap.byName || {}).forEach(updateRecord);
+  Object.values(contactMap.byPhone || {}).forEach(updateRecord);
+
+  const data = await chrome.storage.local.get(['zaloContacts']);
+  const zaloContacts = data.zaloContacts || {};
+  Object.values(zaloContacts).forEach((contact) => {
+    if (contact && normalizeTagKeyForColor(contact.tag) === tagKey) {
+      contact.tag = '';
+      contact.tag_color = '';
+      contact.updatedAt = Date.now();
+      changed = true;
+    }
+  });
+
+  if (changed) {
+    await storageSet({ [CONTACT_MAP_STORAGE_KEY]: contactMap });
+    await chrome.storage.local.set({ zaloContacts });
+  }
+
+  return {
+    ok: true,
+    contacts: await getStoredContacts()
+  };
+}
+
+/**
  * Xoá một liên hệ khỏi danh bạ theo số điện thoại.
  * @param {string} phone - Số điện thoại cần xoá
  * @returns {Promise<{ok: boolean, contacts: Object[]}>}

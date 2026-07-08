@@ -41,12 +41,18 @@ function renderContactTagFilter() {
     ...tags.map((tag) => {
       const color = getCanonicalTagColor(tag);
       const selectedClass = tag === current ? 'bg-slate-50' : '';
-      return `<button data-contact-tag-filter="${escapeHtml(tag)}"
-        class="w-full text-left px-3 py-1.5 text-xs hover:bg-slate-50 ${selectedClass}">
-        <span class="px-1.5 py-0.5 rounded text-white font-extrabold inline-block" style="background-color: ${escapeHtml(color)}">${escapeHtml(tag)}</span>
-      </button>`;
+      return `<div class="w-full flex items-center justify-between group hover:bg-slate-50 ${selectedClass}">
+        <button data-contact-tag-filter="${escapeHtml(tag)}" class="flex-1 text-left px-3 py-1.5 text-xs text-slate-700">
+          <span class="px-1.5 py-0.5 rounded text-white font-extrabold inline-block" style="background-color: ${escapeHtml(color)}">${escapeHtml(tag)}</span>
+        </button>
+        <button class="px-3 py-1.5 text-rose-500 hover:text-rose-700 hidden group-hover:block" data-delete-tag="${escapeHtml(tag)}" title="Xoá tag này khỏi tất cả danh bạ">
+          <i data-lucide="x" class="w-3.5 h-3.5"></i>
+        </button>
+      </div>`;
     })
   ].join('');
+
+  if (window.lucide) window.lucide.createIcons();
 }
 
 function setContactSort(field) {
@@ -133,11 +139,16 @@ function renderDirectoryTags() {
       const tagColor = tag === 'Tất cả' ? '#4f46e5' : getCanonicalTagColor(tag);
       const isDefault = tag === 'Tất cả';
       return `
-        <button data-dropdown-tag="${escapeHtml(tag)}"
-          class="w-full text-left px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50 flex items-center gap-1.5 ${isActive ? 'bg-slate-50 font-bold' : ''}">
-          ${isDefault ? '' : `<span class="px-1.5 py-0.5 rounded text-white font-extrabold inline-block text-[10px]" style="background-color: ${escapeHtml(tagColor)}">${escapeHtml(tag)}</span>`}
-          ${isDefault ? 'Tất cả tag' : ''}
-        </button>
+        <div class="w-full flex items-center justify-between group hover:bg-slate-50 ${isActive ? 'bg-slate-50 font-bold' : ''}">
+          <button data-dropdown-tag="${escapeHtml(tag)}"
+            class="flex-1 text-left px-3 py-1.5 text-xs text-slate-700 flex items-center gap-1.5">
+            ${isDefault ? '' : `<span class="px-1.5 py-0.5 rounded text-white font-extrabold inline-block text-[10px]" style="background-color: ${escapeHtml(tagColor)}">${escapeHtml(tag)}</span>`}
+            ${isDefault ? 'Tất cả tag' : ''}
+          </button>
+          ${!isDefault ? `<button class="px-3 py-1.5 text-rose-500 hover:text-rose-700 hidden group-hover:block" data-delete-tag="${escapeHtml(tag)}" title="Xoá tag này khỏi tất cả danh bạ">
+            <i data-lucide="x" class="w-3.5 h-3.5"></i>
+          </button>` : ''}
+        </div>
       `;
     }).join("");
   }
@@ -175,24 +186,53 @@ function renderDirectoryTags() {
       ? (isActive ? `style="background-color: ${tagColor}; border-color: ${tagColor}"` : '')
       : `style="background-color: ${escapeHtml(tagColor)}; border-color: ${escapeHtml(tagColor)}"`;
     return `
-      <button 
-        type="button"
-        class="px-2.5 py-1 rounded-md text-xs font-extrabold border transition-all whitespace-nowrap flex-shrink-0 ${tag === 'Tất cả'
-        ? (isActive ? 'text-white shadow-xs' : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50')
-        : `text-white ${isActive ? 'shadow-xs ring-2 ring-offset-1 ring-indigo-100' : 'opacity-85 hover:opacity-100'}`
-      }"
-        data-tag="${escapeHtml(tag)}"
-        ${colorStyle}
-      >
-        ${escapeHtml(tag)}
-      </button>
+      <div class="flex-shrink-0 flex items-center rounded-md border transition-all ${
+        tag === 'Tất cả'
+          ? (isActive ? 'text-white shadow-xs' : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50')
+          : `text-white ${isActive ? 'shadow-xs ring-2 ring-offset-1 ring-indigo-100' : 'opacity-85 hover:opacity-100'}`
+      }" ${colorStyle}>
+        <button type="button" data-directory-tag="${escapeHtml(tag)}" class="px-2.5 py-1 text-xs font-extrabold whitespace-nowrap outline-none">
+          ${escapeHtml(tag)}
+        </button>
+        ${tag !== 'Tất cả' ? `
+        <button type="button" data-delete-tag="${escapeHtml(tag)}" class="px-1.5 py-1 text-white/70 hover:text-white outline-none" title="Xoá tag này">
+          <i data-lucide="x" class="w-3.5 h-3.5"></i>
+        </button>
+        ` : ''}
+      </div>
     `;
   }).join("");
 
-  // Gắn event click cho các button
-  container.querySelectorAll('button').forEach(btn => {
-    btn.addEventListener('click', () => {
-      setDirectoryTagFilter(btn.dataset.tag);
+  // Re-initialize icons for the new elements
+  if (window.lucide) window.lucide.createIcons();
+
+  // Gắn event click cho các button ngang
+  container.querySelectorAll('button[data-directory-tag]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      setDirectoryTagFilter(btn.dataset.directoryTag);
+    });
+  });
+
+  container.querySelectorAll('button[data-delete-tag]').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const tag = btn.dataset.deleteTag;
+      if (typeof showConfirmDeleteTag === 'function') {
+        const isConfirmed = await showConfirmDeleteTag(tag);
+        if (isConfirmed) {
+          showToast('Đang xoá tag...');
+          const resp = await sendMessage({ type: 'REMOVE_TAG_FROM_ALL', tag: tag });
+          if (resp.ok) {
+            showToast(`Đã xoá tag "${tag}" thành công!`);
+            if (currentDirectoryTagFilter === tag) currentDirectoryTagFilter = "Tất cả";
+            await loadContacts();
+          } else {
+            showToast(resp.error || "Xoá tag thất bại.", "error");
+          }
+        }
+      }
     });
   });
 }

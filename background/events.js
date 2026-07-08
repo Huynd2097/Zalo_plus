@@ -204,6 +204,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
 
+  if (message?.type === 'REMOVE_TAG_FROM_ALL') {
+    deleteTagFromAllContacts(message.tag)
+      .then((result) => sendResponse({ ok: true, ...result }))
+      .catch((err) => sendResponse({ ok: false, error: err?.message || 'Không xoá được nhãn.' }));
+    return true;
+  }
+
   if (message?.type === 'DELETE_CONTACT') {
     deleteContactByPhone(message.phone)
       .then((result) => sendResponse({ ok: true, ...result }))

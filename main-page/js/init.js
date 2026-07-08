@@ -364,7 +364,28 @@ async function initialize() {
     document.getElementById("contactTagFilterDropdown")?.classList.toggle("hidden");
   });
 
-  document.getElementById("contactTagFilterOptions")?.addEventListener("click", (e) => {
+  document.getElementById("contactTagFilterOptions")?.addEventListener("click", async (e) => {
+    const deleteBtn = e.target.closest("[data-delete-tag]");
+    if (deleteBtn) {
+      e.preventDefault();
+      e.stopPropagation();
+      const tag = deleteBtn.dataset.deleteTag;
+      const isConfirmed = await showConfirmDeleteTag(tag);
+      if (isConfirmed) {
+        document.getElementById("contactTagFilterDropdown")?.classList.add("hidden");
+        showToast('Đang xoá tag...');
+        const resp = await sendMessage({ type: 'REMOVE_TAG_FROM_ALL', tag: tag });
+        if (resp.ok) {
+          showToast(`Đã xoá tag "${tag}" thành công!`);
+          if (contactTagFilter === tag) contactTagFilter = "";
+          await loadContacts();
+        } else {
+          showToast(resp.error || "Xoá tag thất bại.", "error");
+        }
+      }
+      return;
+    }
+
     const btn = e.target.closest("[data-contact-tag-filter]");
     if (!btn) return;
     contactTagFilter = btn.dataset.contactTagFilter || "";
@@ -377,7 +398,28 @@ async function initialize() {
     document.getElementById("directoryTagDropdownMenu")?.classList.toggle("hidden");
   });
 
-  document.getElementById("directoryTagDropdownOptions")?.addEventListener("click", (e) => {
+  document.getElementById("directoryTagDropdownOptions")?.addEventListener("click", async (e) => {
+    const deleteBtn = e.target.closest("[data-delete-tag]");
+    if (deleteBtn) {
+      e.preventDefault();
+      e.stopPropagation();
+      const tag = deleteBtn.dataset.deleteTag;
+      const isConfirmed = await showConfirmDeleteTag(tag);
+      if (isConfirmed) {
+        document.getElementById("directoryTagDropdownMenu")?.classList.add("hidden");
+        showToast('Đang xoá tag...');
+        const resp = await sendMessage({ type: 'REMOVE_TAG_FROM_ALL', tag: tag });
+        if (resp.ok) {
+          showToast(`Đã xoá tag "${tag}" thành công!`);
+          if (currentDirectoryTagFilter === tag) currentDirectoryTagFilter = "Tất cả";
+          await loadContacts();
+        } else {
+          showToast(resp.error || "Xoá tag thất bại.", "error");
+        }
+      }
+      return;
+    }
+
     const btn = e.target.closest("[data-dropdown-tag]");
     if (!btn) return;
     const tag = btn.dataset.dropdownTag;
@@ -689,4 +731,33 @@ function clearComposerAttachedImage() {
 
   previewWrapper?.classList.add("hidden");
   uploadWrapper?.classList.remove("hidden");
+}
+
+function showConfirmDeleteTag(tag) {
+  return new Promise((resolve) => {
+    const escapeHTML = (str) => String(str).replace(/[&<>'"]/g, match => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[match]));
+    const modalHtml = `
+      <div id="customConfirmModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm animate-fade-in">
+        <div class="bg-white rounded-xl shadow-xl w-80 p-5 transform transition-all scale-100">
+          <h3 class="text-lg font-bold text-slate-800 mb-2">Xác nhận Xoá Tag</h3>
+          <p class="text-sm text-slate-600 mb-5">Bạn có chắc chắn muốn xoá tag "<span class="font-bold text-rose-500">${escapeHTML(tag)}</span>" khỏi toàn bộ danh bạ không? Hành động này không thể hoàn tác.</p>
+          <div class="flex justify-end gap-2">
+            <button id="btnCancelDeleteTag" class="px-4 py-1.5 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors">Hủy</button>
+            <button id="btnConfirmDeleteTag" class="px-4 py-1.5 text-xs font-semibold text-white bg-rose-500 hover:bg-rose-600 rounded-lg shadow-sm transition-colors">Xoá ngay</button>
+          </div>
+        </div>
+      </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    const modal = document.getElementById('customConfirmModal');
+    
+    document.getElementById('btnCancelDeleteTag').onclick = () => {
+      modal.remove();
+      resolve(false);
+    };
+    document.getElementById('btnConfirmDeleteTag').onclick = () => {
+      modal.remove();
+      resolve(true);
+    };
+  });
 }
