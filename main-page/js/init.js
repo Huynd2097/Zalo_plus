@@ -456,6 +456,35 @@ async function initialize() {
   document.getElementById("btnBulkStateDone")?.addEventListener("click", () => applyBulkState("done"));
   document.getElementById("bulkResetBtn")?.addEventListener("click", applyBulkReset);
   document.getElementById("bulkDeleteBtn")?.addEventListener("click", applyBulkDelete);
+  document.getElementById("btnBulkVerify")?.addEventListener("click", async () => {
+    let idsToCheck = Array.from(selectedQueueIds);
+    if (idsToCheck.length === 0) {
+      const rows = getFilteredQueueRows();
+      rows.forEach(row => {
+        if (row.status === 'error' || row.status === 'pending') {
+          idsToCheck.push(row.id);
+        }
+      });
+    }
+    
+    if (idsToCheck.length === 0) {
+      showToast('Không có dòng nào ở trạng thái Lỗi/Chờ gửi để check.', 'error');
+      return;
+    }
+
+    try {
+      showToast(`Đang check lại ${idsToCheck.length} dòng... Vui lòng không đụng vào tab Zalo.`);
+      const resp = await sendMessage({ type: 'VERIFY_ROWS', ids: idsToCheck });
+      if (!resp.ok) {
+        showToast(resp.error || 'Lỗi kiểm tra lại', 'error');
+      } else {
+        selectedQueueIds.clear();
+        updateUI();
+      }
+    } catch (e) {
+      showToast(e.message || 'Lỗi kết nối background', 'error');
+    }
+  });
 
   // CSV import / Template
   document.getElementById("templateBtn")?.addEventListener("click", () => {

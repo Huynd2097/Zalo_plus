@@ -629,6 +629,55 @@ function updateBatchOverlay() {
   }
 }
 
+let toastContainer = null;
+function ensureToastContainer() {
+  if (toastContainer) return toastContainer;
+  toastContainer = document.createElement('div');
+  toastContainer.id = 'zz-toast-container';
+  toastContainer.style.position = 'fixed';
+  toastContainer.style.bottom = '20px';
+  toastContainer.style.right = '20px';
+  toastContainer.style.zIndex = '2147483647';
+  toastContainer.style.display = 'flex';
+  toastContainer.style.flexDirection = 'column';
+  toastContainer.style.gap = '8px';
+  toastContainer.style.pointerEvents = 'none';
+  document.documentElement.appendChild(toastContainer);
+  return toastContainer;
+}
+
+function showZaloToast(text, duration = 3000) {
+  if (!text) return;
+  const container = ensureToastContainer();
+  const toast = document.createElement('div');
+  toast.style.background = 'rgba(28, 36, 52, 0.9)';
+  toast.style.color = '#fff';
+  toast.style.padding = '10px 16px';
+  toast.style.borderRadius = '8px';
+  toast.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+  toast.style.fontSize = '12px';
+  toast.style.fontFamily = 'Segoe UI, Arial, sans-serif';
+  toast.style.opacity = '0';
+  toast.style.transform = 'translateY(20px)';
+  toast.style.transition = 'opacity 0.3s, transform 0.3s';
+  toast.textContent = text;
+  
+  container.appendChild(toast);
+  
+  requestAnimationFrame(() => {
+    toast.style.opacity = '1';
+    toast.style.transform = 'translateY(0)';
+  });
+  
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateY(10px)';
+    setTimeout(() => {
+      if (toast.parentNode) toast.parentNode.removeChild(toast);
+    }, 300);
+  }, duration);
+}
+
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area !== 'local') return;
 
@@ -647,6 +696,13 @@ chrome.storage.onChanged.addListener((changes, area) => {
   }
 
   if (changes.workerState || changes.messageQueue) {
+    if (changes.workerState) {
+      const newVal = changes.workerState.newValue;
+      const oldVal = changes.workerState.oldValue;
+      if (newVal && newVal.message && (!oldVal || oldVal.message !== newVal.message)) {
+        showZaloToast(newVal.message, 4000);
+      }
+    }
     chrome.storage.local.get(['workerState', 'messageQueue'], (data) => {
       latestWorkerState = data.workerState || null;
       latestQueue = data.messageQueue || null;

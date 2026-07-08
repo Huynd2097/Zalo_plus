@@ -597,6 +597,7 @@ async function sendQueueRow(tabId, row) {
   
   // Kiểm tra chống gửi trùng: Nếu tin nhắn gần nhất đã gửi giống hệt tin muốn gửi thì bỏ qua
   if (!isReminder && message) {
+    await sleep(1500); // Đợi Zalo load lịch sử tin nhắn
     const alreadySentQid = await verifyMessageSentInChat(tabId, null, message);
     if (alreadySentQid) {
       sentQid = typeof alreadySentQid === 'string' && alreadySentQid !== 'true' ? alreadySentQid : 'unknown_qid';
@@ -1014,8 +1015,15 @@ async function runWorkerLoop(tabId) {
       }
 
       if (roundSentRowIds.size > 0) {
+        const settings = await storageGet(['maxRetries', 'autoCheckPostRound']);
+        const autoCheck = settings.autoCheckPostRound ?? true;
+        
+        if (!autoCheck) {
+          roundSentRowIds.clear();
+          continue;
+        }
+
         await saveWorkerState({ phase: 'sending', currentRowId: null, message: 'Đang kiểm tra lại các tin nhắn đã gửi trong lượt...' });
-        const settings = await storageGet(['maxRetries']);
         const maxRetries = Number(settings.maxRetries ?? 2);
         
         for (const rowId of roundSentRowIds) {
@@ -1024,15 +1032,30 @@ async function runWorkerLoop(tabId) {
           
           let hasError = false;
           let errMsg = row.error || 'Lỗi gửi tin nhắn (kiểm tra lại)';
+          const noteStr = String(row.values?.note || '').trim().toLowerCase();
+          const isReminder = noteStr === 'reminder' || noteStr === 'nhac hen' || noteStr === 'nhắc hẹn';
           
-          if (row.values && (row.values.sent_qid || row.values.message || row.values.media_id)) {
+          if (isReminder) {
+             if (row.error) hasError = true;
+          } else if (row.values && (row.values.sent_qid || row.values.message || row.values.media_id)) {
              try {
                 // Chỉ check nếu mở được hội thoại
                 const opened = await openBatchRowChatForSend(zaloTab.id, row);
                 if (!opened.foundByPhone && !String(row.values.zid || '').trim()) {
                    throw new Error('Không lấy được ID cuộc trò chuyện.');
                 }
-                const foundQid = await verifyMessageSentInChat(zaloTab.id, row.values.sent_qid, row.values.message);
+                
+                let foundQid = null;
+                for (let k = 0; k < 4; k++) {
+                   foundQid = await verifyMessageSentInChat(zaloTab.id, row.values.sent_qid, row.values.message);
+                   if (foundQid) break;
+                   await sleep(1000);
+                }
+
+                if (!foundQid && !row.values.message && row.values.media_id && row.values.sent_qid === 'unknown_qid') {
+                   foundQid = true;
+                }
+
                 if (foundQid) {
                    hasError = false; // Đã tìm thấy tin nhắn
                    if (typeof foundQid === 'string' && foundQid !== 'true') {
@@ -1124,7 +1147,9 @@ async function runWorkerLoop(tabId) {
       await saveWorkerState({ running: false, phase: 'idle', currentRowId: null, currentWait: null, message: 'Hoàn thành xử lý hàng chờ.' });
     }
   } finally {
-    await withZaloActionLock(() => detachDebugger(zaloTab.id));
+    if (zaloTab && zaloTab.id) {
+      await withZaloActionLock(() => detachDebugger(zaloTab.id));
+    }
   }
 }
 
@@ -1202,4 +1227,65 @@ async function stopWorker() {
   }
   
   return nextState;
+}
+
+/**
+ * Kiểm tra tay các dòng đã chọn để xem tin đã gửi chưa (những tin bị báo lỗi / chờ gửi).
+ */
+async function verifyQueueRows(ids) {
+  const state = await loadWorkerState();
+  if (state.running) {
+    throw new Error('Vui lòng Tạm dừng chiến dịch trước khi check tay!');
+  }
+
+  const queue = await loadQueue();
+  if (!ids || ids.length === 0) return;
+
+  const zaloTab = await ensureZaloTab();
+  if (!zaloTab?.id) {
+    throw new Error('Không tìm thấy tab Zalo. Vui lòng mở Zalo Web trước.');
+  }
+
+  await saveWorkerState({ running: true, phase: 'sending', message: 'Đang check lại các tin nhắn...' });
+
+  try {
+    for (const id of ids) {
+      const row = queue.byId[id];
+      if (!row) continue;
+
+      await saveWorkerState({ currentRowId: id, message: `Đang check lại tin cho: ${row.values.display_name || row.values.phone || row.values.sys_phone || row.values.zid}` });
+
+      const opened = await openBatchRowChatForSend(zaloTab.id, row);
+      if (!opened.ok) {
+        continue;
+      }
+
+      await sleep(1500);
+      
+      const message = String(row.values.message || '').trim() || String(row.values.note || '').trim();
+      const mediaId = String(row.values.media_id || '').trim();
+      
+      let sentQid = false;
+      if (!mediaId && message) {
+         sentQid = await verifyMessageSentInChat(zaloTab.id, null, message);
+      } else if (mediaId && !message) {
+         sentQid = true; // Chỉ có ảnh thì coi như xong
+      } else if (mediaId && message) {
+         sentQid = await verifyMessageSentInChat(zaloTab.id, null, message);
+      }
+
+      if (sentQid) {
+        await updateQueueRow(id, {
+          status: 'done',
+          error: '',
+          sentAt: Date.now()
+        });
+      }
+    }
+  } finally {
+    if (zaloTab && zaloTab.id) {
+      await withZaloActionLock(() => detachDebugger(zaloTab.id));
+    }
+    await saveWorkerState({ running: false, phase: 'idle', currentRowId: null, message: 'Đã hoàn thành check lại tin nhắn.' });
+  }
 }

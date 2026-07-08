@@ -149,6 +149,7 @@ function syncBulkActionsState() {
   const bulkStatusBtn = document.getElementById("bulkStatusBtn");
   const bulkResetBtn = document.getElementById("bulkResetBtn");
   const bulkDeleteBtn = document.getElementById("bulkDeleteBtn");
+  const btnBulkVerify = document.getElementById("btnBulkVerify");
 
   if (totalChecked > 0) {
     if (countLabel) {
@@ -158,6 +159,7 @@ function syncBulkActionsState() {
     bulkStatusBtn?.removeAttribute("disabled");
     bulkResetBtn?.removeAttribute("disabled");
     bulkDeleteBtn?.removeAttribute("disabled");
+    btnBulkVerify?.removeAttribute("disabled");
   } else {
     countLabel?.classList.add("hidden");
     bulkStatusBtn?.setAttribute("disabled", "true");

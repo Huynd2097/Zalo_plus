@@ -3,6 +3,7 @@ const DELAY_BETWEEN_ACTIONS_KEY = 'delayBetweenActions';
 const PAUSE_AFTER_KEY = 'pauseAfter';
 const PAUSE_DURATION_KEY = 'pauseDuration';
 const MAX_RETRIES_KEY = 'maxRetries';
+const AUTO_CHECK_POST_ROUND_KEY = 'autoCheckPostRound';
 
 const samplePayload = {
   status: 'Đang theo dõi',
@@ -178,7 +179,8 @@ window.addEventListener('DOMContentLoaded', async () => {
     DELAY_BETWEEN_ACTIONS_KEY,
     PAUSE_AFTER_KEY,
     PAUSE_DURATION_KEY,
-    MAX_RETRIES_KEY
+    MAX_RETRIES_KEY,
+    AUTO_CHECK_POST_ROUND_KEY
   ]);
 
   if (delayInput) {
@@ -196,6 +198,12 @@ window.addEventListener('DOMContentLoaded', async () => {
   if (maxRetriesInput) {
     maxRetriesInput.value = settingsData[MAX_RETRIES_KEY] ?? 2;
     maxRetriesInput.addEventListener('change', () => saveSetting(MAX_RETRIES_KEY, Number(maxRetriesInput.value)));
+  }
+
+  const autoCheckPostRoundInput = document.getElementById('autoCheckPostRoundInput');
+  if (autoCheckPostRoundInput) {
+    autoCheckPostRoundInput.checked = settingsData[AUTO_CHECK_POST_ROUND_KEY] ?? true;
+    autoCheckPostRoundInput.addEventListener('change', () => saveSetting(AUTO_CHECK_POST_ROUND_KEY, autoCheckPostRoundInput.checked));
   }
 
   document.getElementById('sendTestBtn')?.addEventListener('click', sendTestPayload);

@@ -169,6 +169,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
 
+  if (message?.type === 'VERIFY_ROWS') {
+    verifyQueueRows(message.ids)
+      .then(() => sendResponse({ ok: true }))
+      .catch((err) => sendResponse({ ok: false, error: err?.message || 'Lỗi kiểm tra lại.' }));
+    return true;
+  }
+
   if (message?.type === 'SYNC_CONTACTS') {
     syncVisibleContacts()
       .then((result) => sendResponse({ ok: true, ...result }))
