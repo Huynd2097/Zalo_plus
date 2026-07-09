@@ -3,7 +3,7 @@
   "name": "Zalo CSV Batch",
   "version": "1.0.0",
   "description": "Import CSV, gui tin nhan Zalo theo zid va theo doi phan hoi.",
-  "permissions": ["tabs", "storage", "scripting", "alarms", "debugger", "unlimitedStorage"],
+  "permissions": ["tabs", "storage", "scripting", "alarms", "debugger", "unlimitedStorage", "sidePanel"],
   "host_permissions": [
     "https://*.zoom.us/*",
     "https://chat.zalo.me/*",
@@ -16,6 +16,9 @@
   "action": {
     "default_popup": "popup/popup.html",
     "default_title": "Zalo CSV Batch"
+  },
+  "side_panel": {
+    "default_path": "sidepanel/sidepanel.html"
   },
   "options_ui": {
     "page": "settings/settings.html",

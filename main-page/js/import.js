@@ -111,13 +111,23 @@ function getRowZid(row) {
 /**
  * Lựa chọn hành động khi xảy ra xung đột dữ liệu nhập.
  * @param {number} count 
- * @returns {string}
+ * @returns {Promise<string>}
  */
-function chooseImportConflictAction(count) {
+async function chooseImportConflictAction(count) {
   if (!count) return 'append';
-  const replace = confirm(`Có ${count} dòng trùng ZID/SĐT với bảng hiện tại.\n\nBấm OK để ghi đè (thay thế) dòng cũ.\nBấm Cancel để chọn bỏ qua trùng hoặc hủy.`);
+  const replace = await showConfirmModal(
+    "Xung đột dữ liệu",
+    `Có ${count} dòng trùng ZID/SĐT với bảng hiện tại.\n\nBấm OK để ghi đè (thay thế) dòng cũ.\nBấm Cancel để chọn bỏ qua trùng hoặc hủy.`,
+    "Ghi đè",
+    "Bỏ qua"
+  );
   if (replace) return 'replace';
-  const skip = confirm('Bấm OK để chỉ thêm các dòng mới (bỏ qua dòng trùng ZID).\nBấm Cancel để hủy bỏ hoàn toàn.');
+  const skip = await showConfirmModal(
+    "Thêm dữ liệu mới",
+    "Bấm OK để chỉ thêm các dòng mới (bỏ qua dòng trùng ZID).\nBấm Cancel để hủy bỏ hoàn toàn.",
+    "Chỉ thêm mới",
+    "Hủy bỏ"
+  );
   return skip ? 'skip' : 'cancel';
 }
 
@@ -125,9 +135,9 @@ function chooseImportConflictAction(count) {
  * Trộn dữ liệu mới nhập với dữ liệu hàng chờ hiện có.
  * @param {Object[]} existingRows 
  * @param {Object[]} importedRows 
- * @returns {Object[]|null}
+ * @returns {Promise<Object[]|null>}
  */
-function mergeImportedRows(existingRows, importedRows) {
+async function mergeImportedRows(existingRows, importedRows) {
   const zidToIndex = new Map();
   existingRows.forEach((row, index) => {
     const zid = getRowZid(row);
@@ -139,7 +149,7 @@ function mergeImportedRows(existingRows, importedRows) {
     return zid && zidToIndex.has(zid);
   }).length;
 
-  const action = chooseImportConflictAction(conflictCount);
+  const action = await chooseImportConflictAction(conflictCount);
   if (action === 'cancel') return null;
 
   const merged = existingRows.map((row) => ({ ...row }));
@@ -228,14 +238,15 @@ async function importBatchFromFile(file) {
     _status: r.status
   }));
 
-  const mergedRows = mergeImportedRows(existingRows, rows);
+  const mergedRows = await mergeImportedRows(existingRows, rows);
   if (!mergedRows) {
     showToast('Đã hủy import.');
     return;
   }
 
   const onlyNewRows = rows.filter((r) => !existingRows.some((e) => getRowZid(e) && getRowZid(e) === getRowZid(r)));
-  if (!confirm(buildImportConfirmText(onlyNewRows.length ? onlyNewRows : rows, rows.length))) {
+  const isConfirmed = await showConfirmModal("Xác nhận Import", buildImportConfirmText(onlyNewRows.length ? onlyNewRows : rows, rows.length), "Import ngay", "Hủy");
+  if (!isConfirmed) {
     showToast('Đã hủy import.');
     return;
   }

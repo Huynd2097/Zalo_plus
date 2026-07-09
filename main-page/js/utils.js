@@ -26,48 +26,13 @@ function sendMessage(message) {
  * @param {string} [type="success"] - Loại thông báo: success | error | info
  */
 function showToast(message, type = "success") {
-  let container = document.getElementById("toastContainer");
-  if (!container) {
-    container = document.createElement("div");
-    container.id = "toastContainer";
-    container.className = "fixed bottom-4 right-4 flex flex-col gap-2 z-[9999] pointer-events-none items-end";
-    document.body.appendChild(container);
-  }
-
-  const toast = document.createElement("div");
-  toast.className = "bg-slate-900 text-white px-3.5 py-2 rounded-xl shadow-xl flex items-center gap-2 transform translate-y-8 opacity-0 transition-all duration-200 pointer-events-auto";
-
-  let iconHtml = '';
-  if (type === "success") {
-    iconHtml = '<span class="p-1 rounded-full bg-emerald-500 text-white flex items-center justify-center flex-shrink-0"><i data-lucide="check" class="w-3.5 h-3.5 stroke-[4]"></i></span>';
-  } else if (type === "error") {
-    iconHtml = '<span class="p-1 rounded-full bg-rose-500 text-white flex items-center justify-center flex-shrink-0"><i data-lucide="alert-circle" class="w-3.5 h-3.5"></i></span>';
-  } else {
-    iconHtml = '<span class="p-1 rounded-full bg-indigo-500 text-white flex items-center justify-center flex-shrink-0"><i data-lucide="info" class="w-3.5 h-3.5"></i></span>';
-  }
-
-  const msgSpan = document.createElement("span");
-  msgSpan.className = "text-xs font-semibold";
-  msgSpan.innerText = message;
-
-  toast.innerHTML = iconHtml;
-  toast.appendChild(msgSpan);
-  container.appendChild(toast);
-
-  if (window.lucide) {
-    window.lucide.createIcons({ root: toast });
-  }
-
-  requestAnimationFrame(() => {
-    toast.classList.remove("translate-y-8", "opacity-0");
-    toast.classList.add("translate-y-0", "opacity-100");
-  });
-
-  setTimeout(() => {
-    toast.classList.remove("translate-y-0", "opacity-100");
-    toast.classList.add("translate-y-8", "opacity-0");
-    toast.addEventListener('transitionend', () => toast.remove());
-  }, 3000);
+  try {
+    chrome.runtime.sendMessage({
+      type: 'SIDE_PANEL_LOG',
+      payload: message,
+      logType: type
+    }).catch(() => {});
+  } catch(e) {}
 }
 
 /** Biến nội bộ theo dõi timer undo đang hoạt động */
@@ -526,5 +491,42 @@ function compressAndCropImage(file) {
     };
     reader.onerror = () => reject(new Error('Không đọc được file ảnh.'));
     reader.readAsDataURL(file);
+  });
+}
+
+/**
+ * Hiển thị một modal xác nhận chung thay thế cho window.confirm.
+ * @param {string} title - Tiêu đề hộp thoại
+ * @param {string} message - Nội dung câu hỏi/cảnh báo (có thể chứa HTML)
+ * @param {string} [confirmText="Đồng ý"] - Chữ trên nút Đồng ý
+ * @param {string} [cancelText="Hủy"] - Chữ trên nút Hủy
+ * @param {string} [confirmColorClass="bg-rose-500 hover:bg-rose-600"] - Màu sắc nút Đồng ý (vd: tailwind class)
+ * @returns {Promise<boolean>} - Trả về true nếu người dùng chọn Đồng ý, false nếu Hủy
+ */
+function showConfirmModal(title, message, confirmText = "Đồng ý", cancelText = "Hủy", confirmColorClass = "bg-rose-500 hover:bg-rose-600 text-white") {
+  return new Promise((resolve) => {
+    const modalHtml = `
+      <div id="customGlobalConfirmModal" class="fixed inset-0 z-[10000] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm animate-fade-in">
+        <div class="bg-white rounded-xl shadow-2xl w-96 p-6 transform transition-all scale-100">
+          <h3 class="text-lg font-bold text-slate-800 mb-3">${title}</h3>
+          <p class="text-sm text-slate-600 mb-6 whitespace-pre-wrap">${message}</p>
+          <div class="flex justify-end gap-3">
+            <button id="btnGlobalCancel" class="px-5 py-2 text-sm font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors">${cancelText}</button>
+            <button id="btnGlobalConfirm" class="px-5 py-2 text-sm font-semibold rounded-lg shadow-sm transition-colors ${confirmColorClass}">${confirmText}</button>
+          </div>
+        </div>
+      </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    const modal = document.getElementById('customGlobalConfirmModal');
+    
+    document.getElementById('btnGlobalCancel').onclick = () => {
+      modal.remove();
+      resolve(false);
+    };
+    document.getElementById('btnGlobalConfirm').onclick = () => {
+      modal.remove();
+      resolve(true);
+    };
   });
 }

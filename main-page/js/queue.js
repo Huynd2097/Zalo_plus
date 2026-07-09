@@ -362,13 +362,13 @@ function renderQueueRecipientCell(row, tagColor) {
   const avatar = values.avatar || contact.avatar || '';
 
   return `
-    <td class="${getQueueCellClass('recipient')}">
-      <div class="flex items-center gap-2 min-w-0">
-        <div class="rounded-full border border-indigo-100 flex-shrink-0 overflow-hidden bg-indigo-50 flex items-center justify-center" style="width: 40px; height: 40px;">
-          ${avatar ? `<img src="${escapeHtml(avatar)}" class="w-full h-full object-cover" referrerpolicy="no-referrer" />` : `<span class="text-indigo-600 text-[11px] font-extrabold">${escapeHtml(getInitials({ display_name: name, phone }))}</span>`}
+    <td class="${getQueueCellClass('recipient')} group/recipient relative">
+      <div class="flex items-center gap-2 min-w-0 pr-2">
+        <div class="rounded-full border border-indigo-100 flex-shrink-0 overflow-hidden bg-indigo-50 flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity" style="width: 40px; height: 40px;" onclick="gotoChat('${escapeHtml(values.zid || '')}', '${escapeHtml(values.phone || values.sys_phone || '')}')" title="Mở cuộc trò chuyện này">
+          ${avatar ? `<img src="${escapeHtml(avatar)}" class="w-full h-full object-cover" referrerpolicy="no-referrer" />` : `<span class="text-indigo-600 text-[11px] font-extrabold cursor-pointer">${escapeHtml(getInitials({ display_name: name, phone }))}</span>`}
         </div>
         <div class="min-w-0 flex-1">
-          <p contenteditable="true" data-row-id="${escapeHtml(row.id)}" data-header="name" spellcheck="false" class="font-semibold text-slate-700 leading-snug truncate focus:outline-none focus:bg-white focus:ring-1 focus:ring-indigo-400 rounded transition-all">${escapeHtml(name)}</p>
+          <p data-row-id="${escapeHtml(row.id)}" data-header="name" class="font-semibold text-slate-700 leading-snug truncate transition-all">${escapeHtml(name)}</p>
           <div class="flex items-center gap-1.5 mt-0.5 min-w-0">
             <span contenteditable="true" data-row-id="${escapeHtml(row.id)}" data-header="phone" spellcheck="false" class="text-[10px] text-slate-400 font-mono whitespace-nowrap focus:outline-none focus:bg-white focus:ring-1 focus:ring-indigo-400 rounded transition-all">${escapeHtml(phone)}</span>
             ${tag ? `<span class="px-1.5 py-0.5 text-[9px] font-extrabold rounded text-white whitespace-nowrap inline-block" style="background-color: ${escapeHtml(tagColor)}">${escapeHtml(tag)}</span>` : ''}
@@ -789,9 +789,12 @@ function findActiveQueueRowByZid(zid) {
     .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))[0] || null;
 }
 
-function askDuplicateZidOverwrite(count) {
-  return window.confirm(
-    `Có ${count} liên hệ trùng zid với dòng chưa Hoàn tất trong hàng chờ.\nBấm OK để ghi đè các dòng đó và đưa về Chờ gửi.\nBấm Hủy để không thêm các liên hệ bị trùng.`
+async function askDuplicateZidOverwrite(count) {
+  return await showConfirmModal(
+    "Xác nhận ghi đè",
+    `Có ${count} liên hệ trùng zid với dòng chưa Hoàn tất trong hàng chờ.\nBấm Đồng ý để ghi đè các dòng đó và đưa về Chờ gửi.\nBấm Hủy để không thêm các liên hệ bị trùng.`,
+    "Ghi đè",
+    "Hủy"
   );
 }
 
@@ -909,7 +912,7 @@ async function addSelectedToQueue() {
 
   let shouldOverwriteDuplicates = false;
   if (duplicateRowsByZid.size > 0) {
-    shouldOverwriteDuplicates = askDuplicateZidOverwrite(duplicateRowsByZid.size);
+    shouldOverwriteDuplicates = await askDuplicateZidOverwrite(duplicateRowsByZid.size);
   }
 
   const newRows = [];
@@ -1021,3 +1024,8 @@ document.addEventListener('change', (e) => {
     }
   }
 });
+
+// Chuyển đến chat Zalo khi ấn nút "Go to"
+function gotoChat(zid, phone) {
+  chrome.runtime.sendMessage({ type: 'GOTO_CHAT', zid, phone });
+}

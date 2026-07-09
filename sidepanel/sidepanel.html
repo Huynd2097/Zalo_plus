@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zalo Plus Info Panel</title>
+  
+  <script src="../vendor/tailwindcss.js"></script>
+  <script src="../vendor/lucide.min.js"></script>
+
+  <style>
+    body {
+      overflow: hidden;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    
+    .queue-item.active-chat {
+      background: rgba(79, 70, 229, 0.15); /* indigo-600/15 */
+      box-shadow: inset 0 0 0 1px #6366f1; /* indigo-500 */
+    }
+
+    #logs-container {
+      font-family: 'Consolas', 'Courier New', monospace;
+    }
+  </style>
+</head>
+<body class="bg-slate-900 flex flex-col h-screen text-slate-300 antialiased selection:bg-indigo-500 selection:text-white">
+
+  <!-- Header -->
+  <div class="px-3 py-2 border-b border-slate-800 bg-slate-900 flex justify-between items-center flex-shrink-0 shadow-sm z-10 text-slate-100">
+    <div class="flex items-center gap-1.5 font-bold text-sm">
+      <i data-lucide="bar-chart-2" class="w-4 h-4 text-indigo-400"></i> Hàng chờ
+    </div>
+    
+    <!-- Dải đếm số lượng (Stats) -->
+    <div class="flex items-center gap-2 justify-end">
+      <div class="flex items-center gap-1 cursor-pointer hover:opacity-80 transition-opacity" title="Chờ gửi" data-status-filter="pending">
+        <i data-lucide="clock" class="w-4 h-4 text-slate-400"></i>
+        <strong id="statsPending" class="text-[13px] text-white font-extrabold leading-none">0</strong>
+      </div>
+      <div class="h-3 w-px bg-slate-700"></div>
+      <div class="flex items-center gap-1 cursor-pointer hover:opacity-80 transition-opacity" title="Đang theo dõi" data-status-filter="wait_reply">
+        <i data-lucide="refresh-cw" class="w-4 h-4 text-cyan-400"></i>
+        <strong id="statsWatching" class="text-[13px] text-white font-extrabold leading-none">0</strong>
+      </div>
+      <div class="h-3 w-px bg-slate-700"></div>
+      <div class="flex items-center gap-1 cursor-pointer hover:opacity-80 transition-opacity" title="Hoàn tất" data-status-filter="done">
+        <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400"></i>
+        <strong id="statsDone" class="text-[13px] text-white font-extrabold leading-none">0</strong>
+      </div>
+      <div class="h-3 w-px bg-slate-700"></div>
+      <div class="flex items-center gap-1 cursor-pointer hover:opacity-80 transition-opacity" title="Lỗi" data-status-filter="error">
+        <i data-lucide="alert-circle" class="w-4 h-4 text-rose-400"></i>
+        <strong id="statsErrors" class="text-[13px] text-white font-extrabold leading-none">0</strong>
+      </div>
+    </div>
+  </div>
+
+  <!-- STATS & FILTER STRIP -->
+  <div class="bg-slate-800/50 border-b border-slate-800 px-2 py-2 flex items-center gap-1.5 z-10 shadow-sm flex-shrink-0">
+    <div class="relative">
+      <button id="queueStatusFilterBtn" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-bold py-1 px-2 rounded text-xs flex items-center gap-1 transition-all">
+        <span id="queueStatusFilterLabel">Tất cả trạng thái</span>
+        <i data-lucide="chevron-down" class="w-3 h-3"></i>
+      </button>
+      <div id="queueStatusFilterDropdown" class="origin-top-left absolute left-0 mt-1 w-36 rounded shadow-lg bg-slate-800 border border-slate-700 ring-1 ring-black ring-opacity-5 z-20 hidden text-slate-200">
+        <div class="py-1">
+          <button data-status-filter="all" class="w-full text-left px-3 py-1.5 text-xs hover:bg-slate-700 flex items-center gap-1.5">
+            <span class="w-1.5 h-1.5 rounded-full bg-slate-500"></span> Tất cả trạng thái
+          </button>
+          <button data-status-filter="pending" class="w-full text-left px-3 py-1.5 text-xs hover:bg-slate-700 flex items-center gap-1.5">
+            <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span> Chờ gửi
+          </button>
+          <button data-status-filter="sending" class="w-full text-left px-3 py-1.5 text-xs hover:bg-slate-700 flex items-center gap-1.5">
+            <span class="w-1.5 h-1.5 rounded-full bg-indigo-400"></span> Đang gửi
+          </button>
+          <button data-status-filter="wait_reply" class="w-full text-left px-3 py-1.5 text-xs hover:bg-slate-700 flex items-center gap-1.5">
+            <span class="w-1.5 h-1.5 rounded-full bg-cyan-400"></span> Chờ phản hồi
+          </button>
+          <button data-status-filter="done" class="w-full text-left px-3 py-1.5 text-xs hover:bg-slate-700 flex items-center gap-1.5">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Hoàn tất
+          </button>
+          <button data-status-filter="error" class="w-full text-left px-3 py-1.5 text-xs hover:bg-slate-700 flex items-center gap-1.5">
+            <span class="w-1.5 h-1.5 rounded-full bg-rose-400"></span> Lỗi
+          </button>
+        </div>
+      </div>
+    </div>
+    
+    <div class="relative">
+      <button id="queueTagFilterBtn" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-bold py-1 px-2 rounded text-xs flex items-center gap-1 transition-all">
+        <span id="queueTagFilterLabel">Tất cả tag</span>
+        <i data-lucide="chevron-down" class="w-3 h-3"></i>
+      </button>
+      <div id="queueTagFilterDropdown" class="origin-top-left absolute left-0 mt-1 w-36 rounded shadow-lg bg-slate-800 border border-slate-700 ring-1 ring-black ring-opacity-5 z-20 hidden text-slate-200">
+        <div class="py-1" id="queueTagFilterOptions">
+          <button data-tag-filter="all" class="w-full text-left px-3 py-1.5 text-xs hover:bg-slate-700">
+            Tất cả tag
+          </button>
+          <!-- Sẽ được fill bằng JS -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Queue List -->
+  <div id="queue-container" class="flex-[1.5] overflow-y-auto p-2 flex flex-col gap-1.5 bg-slate-900/50 border-b border-slate-800 z-0 shadow-inner">
+    <div class="text-center text-slate-500 text-[11px] mt-4">Đang tải danh sách hàng chờ...</div>
+  </div>
+
+  <!-- Logs Section -->
+  <div id="logs-section" class="flex-1 flex flex-col bg-slate-900 min-h-[120px]">
+    <div class="text-[10px] px-2.5 py-1.5 bg-slate-800 border-b border-slate-700 text-slate-400 flex justify-between items-center uppercase font-bold tracking-wider">
+      <span>Nhật ký (Logs)</span>
+      <button class="text-[10px] bg-slate-700 hover:bg-slate-600 text-white px-2 py-0.5 rounded transition-colors" id="clearBtn">Xóa</button>
+    </div>
+    <div id="logs-container" class="flex-1 p-2 overflow-y-auto text-[11px] flex flex-col gap-1 text-slate-300"></div>
+  </div>
+
+  <script src="sidepanel.js"></script>
+</body>
+</html>

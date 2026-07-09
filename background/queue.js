@@ -232,6 +232,12 @@ async function loadWorkerState() {
  */
 async function saveWorkerState(updates) {
   const current = await loadWorkerState();
+  
+  // Ngăn chặn worker loop ghi đè trạng thái paused thành sending/polling
+  if (current.phase === 'paused' && (updates.phase === 'sending' || updates.phase === 'polling')) {
+    delete updates.phase;
+  }
+
   const next = {
     ...current,
     ...updates,

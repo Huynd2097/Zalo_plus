@@ -115,6 +115,17 @@ async function quickSyncContacts() {
 
 // Đăng ký sự kiện click
 openDashboardBtn.addEventListener('click', openDashboard);
+const openLogBtn = document.getElementById('openLogBtn');
+if (openLogBtn) {
+  openLogBtn.addEventListener('click', () => {
+    chrome.windows.getCurrent({ populate: false }, (currentWindow) => {
+      if (currentWindow && currentWindow.id) {
+        chrome.sidePanel.open({ windowId: currentWindow.id });
+        window.close();
+      }
+    });
+  });
+}
 syncNowLink.addEventListener('click', quickSyncContacts);
 
 // Khởi chạy nạp status lúc mở popup

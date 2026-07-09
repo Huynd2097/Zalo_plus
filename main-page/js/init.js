@@ -141,7 +141,11 @@ async function initialize() {
   });
 
   document.getElementById("stopCampaignBtn")?.addEventListener("click", async () => {
-    if (!confirm('Bạn có chắc chắn muốn kết thúc hàng chờ này? Tất cả các dòng đang chờ phản hồi sẽ chuyển sang trạng thái Hoàn tất.')) return;
+    const isConfirmed = await showConfirmModal(
+      "Kết thúc chiến dịch",
+      "Bạn có chắc chắn muốn kết thúc hàng chờ này? Tất cả các dòng đang chờ phản hồi sẽ chuyển sang trạng thái Hoàn tất."
+    );
+    if (!isConfirmed) return;
     try {
       await stopWorkerProcessing();
     } catch (e) {
@@ -370,7 +374,7 @@ async function initialize() {
       e.preventDefault();
       e.stopPropagation();
       const tag = deleteBtn.dataset.deleteTag;
-      const isConfirmed = await showConfirmDeleteTag(tag);
+      const isConfirmed = await showConfirmModal("Xoá Tag", `Bạn có chắc chắn muốn xoá tag "<span class="font-bold text-rose-500">${tag}</span>" khỏi toàn bộ danh bạ không? Hành động này không thể hoàn tác.`);
       if (isConfirmed) {
         document.getElementById("contactTagFilterDropdown")?.classList.add("hidden");
         showToast('Đang xoá tag...');
@@ -404,7 +408,7 @@ async function initialize() {
       e.preventDefault();
       e.stopPropagation();
       const tag = deleteBtn.dataset.deleteTag;
-      const isConfirmed = await showConfirmDeleteTag(tag);
+      const isConfirmed = await showConfirmModal("Xoá Tag", `Bạn có chắc chắn muốn xoá tag "<span class="font-bold text-rose-500">${tag}</span>" khỏi toàn bộ danh bạ không? Hành động này không thể hoàn tác.`);
       if (isConfirmed) {
         document.getElementById("directoryTagDropdownMenu")?.classList.add("hidden");
         showToast('Đang xoá tag...');
@@ -539,7 +543,8 @@ async function initialize() {
 
   // Làm trống hàng chờ
   document.getElementById("clearQueueBtn")?.addEventListener("click", async () => {
-    if (!confirm('Bạn có chắc chắn muốn xóa sạch toàn bộ hàng chờ tin nhắn không?')) return;
+    const isConfirmed = await showConfirmModal("Làm trống hàng chờ", "Bạn có chắc chắn muốn xóa sạch toàn bộ hàng chờ tin nhắn không?");
+    if (!isConfirmed) return;
     try {
       if (latestWorkerState?.running) {
         await sendMessage({ type: 'STOP_WORKER' });
@@ -762,31 +767,4 @@ function clearComposerAttachedImage() {
   uploadWrapper?.classList.remove("hidden");
 }
 
-function showConfirmDeleteTag(tag) {
-  return new Promise((resolve) => {
-    const escapeHTML = (str) => String(str).replace(/[&<>'"]/g, match => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[match]));
-    const modalHtml = `
-      <div id="customConfirmModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm animate-fade-in">
-        <div class="bg-white rounded-xl shadow-xl w-80 p-5 transform transition-all scale-100">
-          <h3 class="text-lg font-bold text-slate-800 mb-2">Xác nhận Xoá Tag</h3>
-          <p class="text-sm text-slate-600 mb-5">Bạn có chắc chắn muốn xoá tag "<span class="font-bold text-rose-500">${escapeHTML(tag)}</span>" khỏi toàn bộ danh bạ không? Hành động này không thể hoàn tác.</p>
-          <div class="flex justify-end gap-2">
-            <button id="btnCancelDeleteTag" class="px-4 py-1.5 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors">Hủy</button>
-            <button id="btnConfirmDeleteTag" class="px-4 py-1.5 text-xs font-semibold text-white bg-rose-500 hover:bg-rose-600 rounded-lg shadow-sm transition-colors">Xoá ngay</button>
-          </div>
-        </div>
-      </div>
-    `;
-    document.body.insertAdjacentHTML('beforeend', modalHtml);
-    const modal = document.getElementById('customConfirmModal');
-    
-    document.getElementById('btnCancelDeleteTag').onclick = () => {
-      modal.remove();
-      resolve(false);
-    };
-    document.getElementById('btnConfirmDeleteTag').onclick = () => {
-      modal.remove();
-      resolve(true);
-    };
-  });
-}
+

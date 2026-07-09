@@ -625,7 +625,8 @@ async function syncContactsFromZalo() {
  * Xóa toàn bộ liên hệ trong DB.
  */
 async function clearAllContacts() {
-  if (!confirm("Cảnh báo: Bạn có chắc muốn xóa SẠCH toàn bộ cơ sở dữ liệu danh bạ?")) return;
+  const isConfirmed = await showConfirmModal("Cảnh báo", "Bạn có chắc muốn xóa SẠCH toàn bộ cơ sở dữ liệu danh bạ?");
+  if (!isConfirmed) return;
   const resp = await sendMessage({ type: 'CLEAR_CONTACTS' });
   if (!resp.ok) {
     showToast(resp.error || "Xóa thất bại.", "error");

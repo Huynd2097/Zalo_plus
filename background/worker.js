@@ -945,8 +945,15 @@ async function verifyMessageSentInChat(tabId, sentQid, sentMessage) {
         emojis.forEach(e => e.remove());
         const timeSpans = [...clone.querySelectorAll('.card-send-time, [class*="time"], [class*="date"], .message-reaction-container, [class*="reaction"]')];
         timeSpans.forEach(e => e.remove());
+        
         let text = normalize(clone.innerText || clone.textContent || '');
-        if (text && sentNorm && (text === sentNorm || text.includes(sentNorm) || sentNorm.includes(text))) return finalQid || true;
+        if (text && sentNorm) {
+          if (text === sentNorm || text.includes(sentNorm) || sentNorm.includes(text)) return finalQid || true;
+          
+          const textClean = text.replace(/\\s+/g, '').toLowerCase();
+          const sentClean = sentNorm.replace(/\\s+/g, '').toLowerCase();
+          if (textClean.includes(sentClean) || sentClean.includes(textClean)) return finalQid || true;
+        }
       }
     }
     return false;

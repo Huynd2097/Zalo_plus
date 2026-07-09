@@ -231,6 +231,24 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
 
+  if (message?.type === 'GOTO_CHAT') {
+    const url = message.zid ? `https://chat.zalo.me/?c=${message.zid}` : (message.phone ? `https://chat.zalo.me/?phone=${message.phone}` : null);
+    if (url) {
+      chrome.tabs.query({ url: "*://chat.zalo.me/*" }, (tabs) => {
+        if (tabs.length > 0) {
+          chrome.tabs.update(tabs[0].id, { url: url, active: true });
+          chrome.windows.update(tabs[0].windowId, { focused: true });
+        } else {
+          chrome.tabs.create({ url: url });
+        }
+        sendResponse({ ok: true });
+      });
+    } else {
+      sendResponse({ ok: false, error: 'Thiếu zid hoặc phone' });
+    }
+    return true;
+  }
+
   if (message?.type !== 'SCHEDULE_TASK') return;
 
   const payload = message.payload;
@@ -274,3 +292,4 @@ async function resumeWorkerIfRunning() {
 }
 
 resumeWorkerIfRunning();
+
