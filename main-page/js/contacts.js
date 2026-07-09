@@ -521,7 +521,7 @@ async function applyTagToPhones() {
     return;
   }
 
-  const phoneList = Array.from(new Set(phonesRaw.split(/[\n,;]+/).map(p => p.trim()).filter(Boolean)));
+  const phoneList = Array.from(new Set(phonesRaw.split(/[\n,;\t|]+/).map(p => p.trim()).filter(Boolean)));
   if (!phoneList.length) {
     showToast("Số điện thoại không hợp lệ!", "error");
     return;
@@ -541,7 +541,11 @@ async function applyTagToPhones() {
   }
 
   document.getElementById("tagPhonesInput").value = "";
-  showToast(`Đã gắn tag "${tagName}" thành công!`);
+  let msg = `Đã gắn tag "${tagName}" cho ${resp.updated} liên hệ!`;
+  if (resp.invalid && resp.invalid.length > 0) {
+    msg += ` (Bỏ qua ${resp.invalid.length} số không hợp lệ)`;
+  }
+  showToast(msg);
   await loadContacts();
 }
 

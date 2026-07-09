@@ -166,7 +166,7 @@ async function tagContactsByPhones(phones, tag, color) {
       ...existing,
       tag: tagText,
       tag_color: tagColor,
-      phone: existing.phone || '',
+      phone: existing.phone || phone,
       sys_phone: phoneKey,
       updatedAt: Date.now()
     });

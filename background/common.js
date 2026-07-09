@@ -76,7 +76,7 @@ function normalizePhoneKey(value) {
   let phone = normalizePhone(value).replace(/^\+/, '');
   if (phone.startsWith('84')) phone = phone.slice(2);
   while (phone.startsWith('0')) phone = phone.slice(1);
-  return phone.length === 9 ? phone : '';
+  return phone.length >= 8 && phone.length <= 15 ? phone : '';
 }
 
 function extractPhoneKeyFromText(value) {
