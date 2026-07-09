@@ -585,7 +585,7 @@ async function searchPhoneSendSmsAndAddFriend(tabId, phone, sms) {
       const headerEl = document.querySelector('#header .header-title, #header .threadChat__title');
       const headerName = (headerEl?.innerText || headerEl?.textContent || '').trim().toLowerCase();
       const expectedName = ${JSON.stringify(firstResult.name)}.trim().toLowerCase();
-      return headerName && (headerName.includes(expectedName) || expectedName.includes(headerName)) ? true : null;
+      return headerName && expectedName && (headerName.includes(expectedName) || expectedName.includes(headerName)) ? true : null;
     })()`, 12000, 250);
     if (!opened) throw new Error('Cuoc hoi thoai tu search khong mo duoc dung ten.');
 

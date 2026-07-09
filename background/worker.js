@@ -395,7 +395,8 @@ async function readIncomingMessages(tabId, sentMessage, sentQidParam = "", reply
     } else if (startIndex === -1 && sentMsg) {
        const sentNorm = normalize(sentMsg);
        for (let i = messages.length - 1; i >= 0; i--) {
-          if (messages[i].isMine && (messages[i].text === sentNorm || messages[i].text.includes(sentNorm) || sentNorm.includes(messages[i].text))) {
+          const t = messages[i].text;
+          if (messages[i].isMine && t && sentNorm && (t === sentNorm || t.includes(sentNorm) || sentNorm.includes(t))) {
              startIndex = i + 1;
              break;
           }
@@ -945,7 +946,7 @@ async function verifyMessageSentInChat(tabId, sentQid, sentMessage) {
         const timeSpans = [...clone.querySelectorAll('.card-send-time, [class*="time"], [class*="date"], .message-reaction-container, [class*="reaction"]')];
         timeSpans.forEach(e => e.remove());
         let text = normalize(clone.innerText || clone.textContent || '');
-        if (text === sentNorm || text.includes(sentNorm) || sentNorm.includes(text)) return finalQid || true;
+        if (text && sentNorm && (text === sentNorm || text.includes(sentNorm) || sentNorm.includes(text))) return finalQid || true;
       }
     }
     return false;
