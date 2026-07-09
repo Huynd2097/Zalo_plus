@@ -170,9 +170,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 
   if (message?.type === 'VERIFY_ROWS') {
-    verifyQueueRows(message.ids)
-      .then(() => sendResponse({ ok: true }))
-      .catch((err) => sendResponse({ ok: false, error: err?.message || 'Lỗi kiểm tra lại.' }));
+    verifyQueueRows(message.ids).catch(console.error);
+    sendResponse({ ok: true });
     return true;
   }
 

@@ -1030,8 +1030,9 @@ async function runWorkerLoop(tabId) {
         await saveWorkerState({ phase: 'sending', currentRowId: null, message: 'Đang kiểm tra lại các tin nhắn đã gửi trong lượt...' });
         const maxRetries = Number(settings.maxRetries ?? 2);
         
+        const latestQueue = await loadQueue(); // Lấy queue mới nhất để có sent_qid và error thực tế
         for (const rowId of roundSentRowIds) {
-          const row = queue.byId[rowId];
+          const row = latestQueue.byId[rowId];
           if (!row) continue;
           
           let hasError = false;
@@ -1087,6 +1088,7 @@ async function runWorkerLoop(tabId) {
                    retry_count: retryCount + 1,
                    values: { ...row.values, sent_qid: '' }
                 });
+                retryAfterRoundIds.add(rowId);
              } else {
                 await updateQueueRow(rowId, {
                    status: 'error',
@@ -1176,6 +1178,7 @@ async function startWorker(waitReplyTabId) {
     if (row.status === 'error') {
       row.status = 'pending';
       row.error = '';
+      row.retry_count = 0;
       queueUpdated = true;
     }
   });
@@ -1254,6 +1257,11 @@ async function verifyQueueRows(ids) {
 
   try {
     for (const id of ids) {
+      try {
+        await chrome.tabs.get(zaloTab.id);
+      } catch (err) {
+        throw new Error('Tab Zalo đã bị đóng. Đã tự động dừng quá trình check.');
+      }
       const row = queue.byId[id];
       if (!row) continue;
 
