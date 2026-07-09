@@ -1238,7 +1238,7 @@ async function stopWorker() {
  */
 async function verifyQueueRows(ids) {
   const state = await loadWorkerState();
-  if (state.running) {
+  if (state.running && state.phase !== 'paused') {
     throw new Error('Vui lòng Tạm dừng chiến dịch trước khi check tay!');
   }
 
